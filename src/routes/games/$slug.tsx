@@ -116,7 +116,11 @@ function GamePage() {
           Practice mode — no entry fee · no prize
         </p>
       ) : null}
-      <GameViewport key={`${slug}-${key}`} slug={slug} />
+      <GameViewport
+        key={`${slug}-${key}`}
+        slug={slug}
+        search={search}
+      />
       <p className="mt-3 text-xs text-subtle">
         Tap left to move, right to act on phones. Isolated game runtime — a crash here cannot take down the arcade.
       </p>
