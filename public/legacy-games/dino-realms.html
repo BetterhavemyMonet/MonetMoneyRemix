@@ -1,0 +1,4590 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Dino Realms | Monet Money Arcade</title>
+
+<script src="/legacy-games/wallet.js"></script>
+<script src="https://api.betterhavemymonet.com/levels.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.min.js"></script>
+
+<style>
+html,body{
+  margin:0;
+  width:100%;
+  height:100%;
+  overflow:hidden;
+  background:#020409;
+  font-family:Orbitron,Arial,sans-serif;
+}
+canvas{
+  display:block;
+  margin:105px auto 0 !important;
+  max-width:100vw !important;
+}
+#mobileControls{
+  position:fixed;
+  left:0;
+  right:0;
+  bottom:max(18px, env(safe-area-inset-bottom));
+  z-index:200;
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-end;
+  padding:0 22px;
+  pointer-events:none;
+}
+
+.controlCluster{
+  display:flex;
+  gap:14px;
+}
+
+.gameControl{
+  width:72px;
+  height:72px;
+  border-radius:50%;
+  border:2px solid rgba(0,255,200,.9);
+  background:rgba(0,0,0,.62);
+  color:#fff;
+  font-size:30px;
+  font-weight:900;
+  box-shadow:
+    0 0 14px rgba(0,255,200,.55),
+    inset 0 0 14px rgba(0,255,200,.18);
+  pointer-events:auto;
+  touch-action:none;
+  user-select:none;
+  -webkit-user-select:none;
+}
+
+.gameControl:active{
+  transform:scale(.92);
+  background:rgba(0,255,200,.32);
+}
+
+#jumpBtn{
+  width:82px;
+  height:82px;
+  border-color:#ffd700;
+  box-shadow:
+    0 0 16px rgba(255,215,0,.6),
+    inset 0 0 14px rgba(255,215,0,.18);
+}
+
+@media (min-width:900px) and (pointer:fine){
+  #mobileControls{
+    opacity:.42;
+  }
+}
+
+#realmBanner{
+  position:fixed;
+  top:14px;
+  left:50%;
+  transform:translateX(-50%);
+  z-index:20;
+  color:white;
+  font-weight:900;
+  letter-spacing:2px;
+  text-shadow:0 0 12px #00ffc8;
+  pointer-events:none;
+}
+
+/* =========================================================
+   MARIO-STYLE ARCADE CONTROLLER
+   ========================================================= */
+
+.ctrl-dpad{
+  position:fixed;
+  left:18px;
+  bottom:18px;
+  width:154px;
+  height:154px;
+  z-index:200;
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  grid-template-rows:repeat(3,1fr);
+  gap:3px;
+  touch-action:none;
+  user-select:none;
+  -webkit-user-select:none;
+}
+
+.dpad-btn{
+  pointer-events:auto;
+  border:1px solid rgba(0,245,255,.65);
+  background:
+    linear-gradient(
+      145deg,
+      rgba(17,21,46,.94),
+      rgba(80,25,115,.88)
+    );
+  color:#fff;
+  font-size:25px;
+  font-weight:900;
+  border-radius:13px;
+  box-shadow:
+    inset 0 0 12px rgba(0,245,255,.12),
+    0 0 15px rgba(153,69,255,.35);
+  touch-action:none;
+  -webkit-tap-highlight-color:transparent;
+}
+
+.dpad-btn:active,
+.dpad-pressed{
+  transform:scale(.92);
+  background:
+    linear-gradient(
+      145deg,
+      rgba(0,245,255,.85),
+      rgba(198,54,255,.9)
+    );
+  box-shadow:
+    0 0 22px rgba(0,245,255,.85);
+}
+
+.dpad-up{
+  grid-column:2;
+  grid-row:1;
+}
+
+.dpad-left{
+  grid-column:1;
+  grid-row:2;
+}
+
+.dpad-center{
+  grid-column:2;
+  grid-row:2;
+  border-radius:50%;
+  background:
+    radial-gradient(
+      circle,
+      rgba(180,75,255,.35),
+      rgba(20,15,40,.9)
+    );
+  border:1px solid rgba(180,75,255,.4);
+}
+
+.dpad-right{
+  grid-column:3;
+  grid-row:2;
+}
+
+.dpad-down{
+  grid-column:2;
+  grid-row:3;
+  opacity:.45;
+}
+
+.ctrl-actions{
+  pointer-events:auto;
+  position:fixed;
+  right:22px;
+  bottom:31px;
+  z-index:200;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+.ctrl-action{
+  pointer-events:auto;
+  width:104px;
+  height:104px;
+  border-radius:50%;
+  border:2px solid rgba(255,70,220,.85);
+  background:
+    radial-gradient(
+      circle at 35% 30%,
+      #ff72ea,
+      #9e35ff 47%,
+      #38145d 100%
+    );
+  color:white;
+  font-size:31px;
+  font-weight:900;
+  box-shadow:
+    inset 0 0 18px rgba(255,255,255,.18),
+    0 0 18px rgba(255,57,222,.65),
+    0 0 34px rgba(91,88,255,.4);
+  touch-action:none;
+  -webkit-tap-highlight-color:transparent;
+}
+
+.ctrl-action span{
+  display:block;
+  margin-top:1px;
+  font-size:9px;
+  letter-spacing:.5px;
+}
+
+.ctrl-action:active{
+  transform:scale(.91);
+  box-shadow:
+    0 0 27px rgba(0,245,255,.9),
+    0 0 42px rgba(255,57,222,.7);
+}
+
+@media (max-width:480px){
+
+  .ctrl-dpad{
+    width:132px;
+    height:132px;
+    left:10px;
+    bottom:12px;
+  }
+
+  .ctrl-action{
+    width:92px;
+    height:92px;
+  }
+
+  .ctrl-actions{
+    right:13px;
+    bottom:23px;
+  }
+}
+
+
+/* ==========================================================
+   DINO REALMS — NINTENDO-STYLE ACTION CONTROLS
+   FLY + FIRE above large JUMP button
+   ========================================================== */
+
+.ctrl-actions{
+  position:fixed !important;
+  right:18px !important;
+  bottom:20px !important;
+
+  width:230px !important;
+
+  display:grid !important;
+  grid-template-columns:1fr 1fr !important;
+  grid-template-rows:82px 116px !important;
+
+  gap:10px 12px !important;
+
+  align-items:center !important;
+  justify-items:center !important;
+
+  z-index:9999 !important;
+  pointer-events:none;
+}
+
+.ctrl-actions .ctrl-action{
+  pointer-events:auto;
+
+  border-radius:50% !important;
+
+  display:flex !important;
+  flex-direction:column !important;
+  align-items:center !important;
+  justify-content:center !important;
+
+  color:#fff !important;
+  font-weight:900 !important;
+
+  touch-action:none !important;
+  user-select:none !important;
+  -webkit-user-select:none !important;
+
+  background:
+    radial-gradient(
+      circle at 35% 25%,
+      #d95cff,
+      #7a27d8 55%,
+      #321064 100%
+    ) !important;
+
+  border:2px solid #ef56ff !important;
+
+  box-shadow:
+    0 0 10px #e343ff,
+    0 0 22px rgba(227,67,255,.65),
+    inset 0 0 12px rgba(255,255,255,.18) !important;
+}
+
+#flyBtn{
+  grid-column:1 !important;
+  grid-row:1 !important;
+
+  width:78px !important;
+  height:78px !important;
+
+  font-size:25px !important;
+
+  border-color:#34d9ff !important;
+
+  box-shadow:
+    0 0 10px #28d9ff,
+    0 0 22px rgba(40,217,255,.55),
+    inset 0 0 12px rgba(255,255,255,.18) !important;
+}
+
+#fireBtn{
+  grid-column:2 !important;
+  grid-row:1 !important;
+
+  width:78px !important;
+  height:78px !important;
+
+  font-size:25px !important;
+
+  border-color:#ff4fd8 !important;
+}
+
+#jumpBtn{
+  grid-column:1 / span 2 !important;
+  grid-row:2 !important;
+
+  width:132px !important;
+  height:112px !important;
+
+  border-radius:50% !important;
+
+  font-size:46px !important;
+
+  border:3px solid #ffdc38 !important;
+
+  box-shadow:
+    0 0 10px #ffe238,
+    0 0 25px rgba(255,73,255,.85),
+    inset 0 0 15px rgba(255,255,255,.22) !important;
+}
+
+.ctrl-action span{
+  display:block !important;
+  margin-top:2px !important;
+
+  font-size:11px !important;
+  line-height:1 !important;
+
+  font-weight:900 !important;
+  letter-spacing:.4px !important;
+}
+
+#jumpBtn span{
+  font-size:13px !important;
+  margin-top:0 !important;
+}
+
+.ctrl-action:active{
+  transform:scale(.91) !important;
+
+  filter:
+    brightness(1.25)
+    saturate(1.2) !important;
+}
+
+/* Slightly tighter layout on narrow phones */
+@media(max-width:390px){
+
+  .ctrl-actions{
+    right:10px !important;
+    bottom:16px !important;
+    width:215px !important;
+  }
+
+  #flyBtn,
+  #fireBtn{
+    width:72px !important;
+    height:72px !important;
+  }
+
+  #jumpBtn{
+    width:124px !important;
+    height:106px !important;
+  }
+}
+
+
+/* ==========================================================
+   DINO REALMS — POLISHED GAME HUD
+   Matches the new Nintendo-style controls
+   ========================================================== */
+
+body{
+  margin:0 !important;
+  background:
+    radial-gradient(circle at 50% 45%, #071525 0%, #02050b 55%, #000 100%) !important;
+  overflow:hidden !important;
+}
+
+/* Realm title */
+#realmBanner{
+  position:fixed !important;
+  top:18px !important;
+  left:50% !important;
+  transform:translateX(-50%) !important;
+
+  width:auto !important;
+  max-width:90vw !important;
+
+  padding:9px 18px !important;
+
+  color:#fff !important;
+  font-weight:900 !important;
+  letter-spacing:2px !important;
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(7,18,34,.92),
+      rgba(20,8,43,.92)
+    ) !important;
+
+  border:1px solid #26ddff !important;
+  border-radius:14px !important;
+
+  box-shadow:
+    0 0 10px rgba(38,221,255,.65),
+    0 0 24px rgba(213,59,255,.30),
+    inset 0 0 12px rgba(255,255,255,.06) !important;
+
+  text-shadow:
+    0 0 7px #36e8ff,
+    0 0 14px rgba(54,232,255,.65) !important;
+
+  z-index:9000 !important;
+}
+
+/* Keep the game canvas visually separated from the controls */
+canvas{
+  box-shadow:
+    0 0 20px rgba(31,219,255,.16),
+    0 0 36px rgba(218,52,255,.12) !important;
+}
+
+/* Controller shell positioning */
+#mobileControls{
+  z-index:9998 !important;
+}
+
+/* D-pad gets the same finish as the action controls */
+.dpad-btn{
+  color:#fff !important;
+
+  background:
+    radial-gradient(
+      circle at 35% 25%,
+      rgba(88,47,165,.96),
+      rgba(35,18,75,.96) 65%,
+      rgba(12,9,34,.98)
+    ) !important;
+
+  border:1.5px solid #29d9ff !important;
+
+  box-shadow:
+    0 0 8px rgba(37,219,255,.65),
+    0 0 17px rgba(216,55,255,.32),
+    inset 0 0 10px rgba(255,255,255,.10) !important;
+
+  text-shadow:
+    0 0 8px rgba(255,255,255,.7) !important;
+
+  transition:
+    transform .08s ease,
+    filter .08s ease !important;
+}
+
+.dpad-btn:active{
+  transform:scale(.90) !important;
+  filter:brightness(1.35) !important;
+}
+
+.dpad-center{
+  border-radius:50% !important;
+
+  background:
+    radial-gradient(
+      circle,
+      rgba(84,28,135,.68),
+      rgba(18,8,45,.92)
+    ) !important;
+
+  border:1px solid rgba(194,54,255,.22) !important;
+
+  box-shadow:
+    inset 0 0 15px rgba(213,49,255,.18) !important;
+}
+
+/* Give all action labels a crisp arcade appearance */
+.ctrl-action span{
+  text-shadow:
+    0 0 5px rgba(255,255,255,.65),
+    0 0 9px rgba(211,55,255,.5) !important;
+}
+
+/* Fly */
+#flyBtn{
+  background:
+    radial-gradient(
+      circle at 35% 25%,
+      #394cff,
+      #5522b8 60%,
+      #1b104d
+    ) !important;
+}
+
+/* Fire */
+#fireBtn{
+  background:
+    radial-gradient(
+      circle at 35% 25%,
+      #ff387e,
+      #a321b4 58%,
+      #41105e
+    ) !important;
+}
+
+/* Main jump button */
+#jumpBtn{
+  background:
+    radial-gradient(
+      circle at 35% 25%,
+      #f24cff,
+      #922be3 55%,
+      #411079 100%
+    ) !important;
+}
+
+/* Small-phone cleanup */
+@media(max-width:420px){
+
+  #realmBanner{
+    top:12px !important;
+    padding:7px 14px !important;
+    font-size:15px !important;
+    letter-spacing:1.4px !important;
+  }
+}
+
+</style>
+</head>
+
+<body>
+
+<div id="realmBanner">DINO REALMS</div>
+
+<div id="mobileControls">
+  <div class="ctrl-dpad" aria-label="Movement controller">
+
+    <button id="upBtn"
+            class="dpad-btn dpad-up"
+            aria-label="Jump">▲</button>
+
+    <button id="leftBtn"
+            class="dpad-btn dpad-left"
+            aria-label="Move left">◀</button>
+
+    <div class="dpad-center"></div>
+
+    <button id="rightBtn"
+            class="dpad-btn dpad-right"
+            aria-label="Move right">▶</button>
+
+    <button id="downBtn"
+            class="dpad-btn dpad-down"
+            aria-label="Down">▼</button>
+
+  </div>
+
+  <div class="ctrl-actions">
+
+    <button id="jumpBtn"
+            class="ctrl-action jump-action"
+            aria-label="Jump">
+      A
+      <span>JUMP</span>
+    </button>
+
+    <button id="flyBtn"
+            class="ctrl-action fly-action"
+            aria-label="Fly">
+      🪽
+      <span>FLY</span>
+    </button>
+
+    <button id="fireBtn"
+            class="ctrl-action fire-action"
+            aria-label="Fire breath">
+      🔥
+      <span>FIRE</span>
+    </button>
+
+  </div>
+</div>
+
+<script>
+let player;
+let cursors;
+let platforms;
+let enemies;
+let coins;
+let portal;
+
+// ============================================================
+// BRUTUS PRIME — FINAL BOSS
+// ============================================================
+let bossPrime = null;
+let bossMaxHP = 25;
+let bossHP = 25;
+let bossPhase = 1;
+let bossHudBg = null;
+let bossHudFill = null;
+let bossHudText = null;
+let bossAttackEvent = null;
+
+let enemyProjectiles;
+let flyingEnemies;
+let wingPickups;
+let playerFire;
+let nextPlayerFireAt = 0;
+let healthPickups;
+const MAX_HEALTH = 10;
+const HEALTH_PACK_RESTORE = 2;
+
+// ==================================================
+// DINO FURY POWER-UP
+// ==================================================
+
+let furyPickups;
+
+let furyActive = false;
+let furyUntil = 0;
+let furyText = null;
+
+const FURY_DURATION = 3000;
+
+let flightActive = false;
+let flightUntil = 0;
+let flightText;
+
+const FLIGHT_DURATION = 12000;
+
+let realmHazards;
+let hazardTimer = 0;
+let weatherText;
+
+let realm = 0; // TEMP TEST: start at Portal Citadel before Brutus Prime
+let realmCoins = 0;
+let score = 0;
+let health = MAX_HEALTH;
+
+// ============================================================
+// REX LIFE SYSTEM
+// 3 lives for the entire six-realm run.
+// Health packs restore HP only — never lives.
+// ============================================================
+const MAX_LIVES = 3;
+let lives = MAX_LIVES;
+let livesText = null;
+let gameOver = false;
+
+
+function getPhysicalControls(){
+
+  const state = {
+    left:false,
+    right:false,
+    up:false,
+    down:false,
+    jump:false
+  };
+
+  if(!navigator.getGamepads) return state;
+
+  const pads = navigator.getGamepads();
+
+  let pad = null;
+
+  for(const p of pads){
+    if(p && p.connected){
+      pad = p;
+      break;
+    }
+  }
+
+  if(!pad) return state;
+
+  const ax = pad.axes?.[0] || 0;
+  const ay = pad.axes?.[1] || 0;
+
+  state.left =
+    !!pad.buttons?.[14]?.pressed ||
+    ax < -0.35;
+
+  state.right =
+    !!pad.buttons?.[15]?.pressed ||
+    ax > 0.35;
+
+  state.up =
+    !!pad.buttons?.[12]?.pressed ||
+    ay < -0.35;
+
+  state.down =
+    !!pad.buttons?.[13]?.pressed ||
+    ay > 0.35;
+
+  // Standard controller buttons
+  state.jump =
+    !!pad.buttons?.[0]?.pressed;
+
+  // B = fly
+  state.fly =
+    !!pad.buttons?.[1]?.pressed;
+
+  // X = fire
+  state.fire =
+    !!pad.buttons?.[2]?.pressed;
+
+  return state;
+}
+
+const touchControls = {
+  left:false,
+  right:false,
+  jump:false,
+  jumpUp:false,
+  jumpA:false,
+  fly:false,
+  fire:false
+};
+
+function refreshTouchJump(){
+  touchControls.jump =
+    touchControls.jumpUp ||
+    touchControls.jumpA;
+}
+
+function bindTouchControls(){
+
+  const activePointers = new Map();
+
+  const bind = (id,key)=>{
+
+    const el=document.getElementById(id);
+    if(!el) return;
+
+    el.style.touchAction='none';
+
+    const setState=(pressed)=>{
+
+      if(key === 'jumpUp'){
+        touchControls.jumpUp=pressed;
+        refreshTouchJump();
+        return;
+      }
+
+      if(key === 'jumpA'){
+        touchControls.jumpA=pressed;
+        refreshTouchJump();
+        return;
+      }
+
+      touchControls[key]=pressed;
+    };
+
+    const down=(ev)=>{
+
+      ev.preventDefault();
+
+      activePointers.set(
+        ev.pointerId,
+        {el,key}
+      );
+
+      try{
+        el.setPointerCapture(ev.pointerId);
+      }catch(_){}
+
+      setState(true);
+    };
+
+    const up=(ev)=>{
+
+      ev.preventDefault();
+
+      const active =
+        activePointers.get(ev.pointerId);
+
+      if(active && active.el === el){
+        activePointers.delete(ev.pointerId);
+        setState(false);
+      }
+
+      try{
+        if(el.hasPointerCapture(ev.pointerId)){
+          el.releasePointerCapture(ev.pointerId);
+        }
+      }catch(_){}
+    };
+
+    el.addEventListener(
+      'pointerdown',
+      down,
+      {passive:false}
+    );
+
+    el.addEventListener(
+      'pointerup',
+      up,
+      {passive:false}
+    );
+
+    el.addEventListener(
+      'pointercancel',
+      up,
+      {passive:false}
+    );
+
+    // Do NOT release on pointerleave.
+    // Pointer capture keeps movement held while
+    // the finger naturally slides on mobile.
+
+    // ------------------------------------------------
+    // gamepad.js ANALOG D-PAD COMPATIBILITY
+    //
+    // The shared analog D-pad dispatches synthetic
+    // mousedown / mouseup events to these buttons.
+    // Pointer events alone will not receive those.
+    // ------------------------------------------------
+
+    const mouseDown=(ev)=>{
+
+      // Ignore the browser-generated mouse event that
+      // follows a real pointer/touch press. Synthetic
+      // gamepad.js events have isTrusted === false.
+      if(ev.isTrusted) return;
+
+      ev.preventDefault();
+      setState(true);
+    };
+
+    const mouseUp=(ev)=>{
+
+      if(ev.isTrusted) return;
+
+      ev.preventDefault();
+      setState(false);
+    };
+
+    el.addEventListener(
+      'mousedown',
+      mouseDown,
+      {passive:false}
+    );
+
+    el.addEventListener(
+      'mouseup',
+      mouseUp,
+      {passive:false}
+    );
+
+    el.addEventListener(
+      'mouseleave',
+      mouseUp,
+      {passive:false}
+    );
+
+    el.addEventListener(
+      'contextmenu',
+      ev=>ev.preventDefault()
+    );
+  };
+
+  bind('leftBtn','left');
+  bind('rightBtn','right');
+
+  // Separate jump sources so releasing one
+  // cannot cancel the other.
+  bind('upBtn','jumpUp');
+  bind('jumpBtn','jumpA');
+
+  // Dedicated action buttons.
+  bind('flyBtn','fly');
+  bind('fireBtn','fire');
+
+  const releaseAll=()=>{
+
+    activePointers.clear();
+
+    touchControls.left=false;
+    touchControls.right=false;
+    touchControls.jumpUp=false;
+    touchControls.jumpA=false;
+    touchControls.fly=false;
+    touchControls.fire=false;
+
+    refreshTouchJump();
+  };
+
+  window.addEventListener(
+    'blur',
+    releaseAll
+  );
+
+  document.addEventListener(
+    'visibilitychange',
+    ()=>{
+      if(document.hidden){
+        releaseAll();
+      }
+    }
+  );
+}
+
+const REALMS = [
+  {
+    name:'EMERALD JUNGLE',
+    bg:'bg-jungle',
+    file:'/legacy-assets/bg-emerald-jungle.png',
+    tint:0x22cc77,
+    enemySpeed:70
+  },
+  {
+    name:'CRYSTAL VALLEY',
+    bg:'bg-crystal',
+    file:'/legacy-assets/bg-crystal-valley.png',
+    tint:0x47d7ff,
+    enemySpeed:85
+  },
+  {
+    name:'FROZEN PEAKS',
+    bg:'bg-frozen',
+    file:'/legacy-assets/bg-frozen-peaks.png',
+    tint:0xaeefff,
+    enemySpeed:100
+  },
+  {
+    name:'MAGMA DEPTHS',
+    bg:'bg-magma',
+    file:'/legacy-assets/bg-magma-depths.png',
+    tint:0xff6633,
+    enemySpeed:115
+  },
+  {
+    name:'PORTAL CITADEL',
+    bg:'bg-citadel',
+    file:'/legacy-assets/bg-portal-citadel.png',
+    tint:0xbc66ff,
+    enemySpeed:130
+  },
+  {
+    name:'CITADEL CORE — BRUTUS PRIME',
+    bg:'bg-citadel',
+    file:'/legacy-assets/bg-portal-citadel.png',
+    tint:0xffcc66,
+    enemySpeed:145
+  }
+];
+
+const config = {
+  type: Phaser.AUTO,
+  width: 960,
+  height: 540,
+  scale:{
+    mode:Phaser.Scale.FIT,
+    autoCenter:Phaser.Scale.CENTER_HORIZONTALLY
+  },
+  physics:{
+    default:'arcade',
+    arcade:{
+      gravity:{y:1100},
+      debug:false
+    }
+  },
+  scene:{
+    preload,
+    create,
+    update
+  }
+};
+
+window.addEventListener('error', (event)=>{
+  const banner = document.getElementById('realmBanner');
+  if(banner){
+    banner.textContent =
+      'JS ERROR: ' +
+      (event.message || 'unknown') +
+      ' @ ' +
+      (event.lineno || '?');
+    banner.style.color = '#ff5577';
+  }
+  console.error('DINO_RUNTIME_ERROR:', event.error || event.message);
+});
+
+window.addEventListener('unhandledrejection', (event)=>{
+  const banner = document.getElementById('realmBanner');
+  if(banner){
+    banner.textContent =
+      'PROMISE ERROR: ' +
+      (event.reason?.message || event.reason || 'unknown');
+    banner.style.color = '#ff5577';
+  }
+  console.error('DINO_PROMISE_ERROR:', event.reason);
+});
+
+new Phaser.Game(config);
+
+function preload(){
+
+  this.load.on('loaderror', file => {
+    console.error('DINO_ASSET_LOAD_ERROR:', file.key, file.src);
+
+    const banner = document.getElementById('realmBanner');
+    if (banner) {
+      banner.textContent =
+        'ASSET ERROR: ' + file.key + ' → ' + file.src;
+      banner.style.color = '#ff5555';
+    }
+  });
+
+  this.load.image('dinoIdle','/legacy-assets/dino-realms/dino/transparent-idle.png');
+  this.load.image('dinoCrouch','/legacy-assets/dino-realms/dino/transparent-crouch.png');
+  this.load.image('dinoRun','/legacy-assets/dino-realms/dino/transparent-run.png');
+  this.load.image('dinoJump','/legacy-assets/dino-realms/dino/transparent-jump.png');
+  this.load.image('dinoAir','/legacy-assets/dino-realms/dino/transparent-air.png');
+  this.load.image('dinoFire','/legacy-assets/dino-realms/dino/transparent-fire.png');
+  this.load.image('playerFireProjectile','/legacy-assets/dino-realms/dino/fire-projectile.png');
+  this.load.image('healthPack','/legacy-assets/dino-realms/health-pack.png');
+
+  // Dino Fury assets
+  this.load.image('furyEgg','/legacy-assets/dino-realms/fury/fury-egg.png');
+
+  this.load.image('furyIdle','/legacy-assets/dino-realms/fury/furious-dino-idle.png');
+  this.load.image('furyRun','/legacy-assets/dino-realms/fury/furious-dino-run.png');
+  this.load.image('furyJump','/legacy-assets/dino-realms/fury/furious-dino-jump.png');
+  this.load.image('furyFlying','/legacy-assets/dino-realms/fury/furious-dino-flying.png');
+  this.load.image('furyFire','/legacy-assets/dino-realms/fury/furious-dino-fire.png');
+  this.load.image('furyAir','/legacy-assets/dino-realms/fury/furious-dino-air.png');
+  this.load.image('dinoFlying','/legacy-assets/dino-realms/dino/transparent-flying.png');
+  // Realm ledge artwork
+  this.load.image('ledgeJungle','/legacy-assets/dino-realms/ledges/jungle-ledge.png');
+  this.load.image('ledgeCrystal','/legacy-assets/dino-realms/ledges/crystal-ledge.png');
+  this.load.image('hazardCrystalStorm','/legacy-assets/dino-realms/hazards/crystal-storm.png');
+
+  // REALM 3 — Frozen Peaks
+  // Snowflake is AMBIENT ONLY — never added to realmHazards.
+  this.load.image('weatherSnowflake','/legacy-assets/dino-realms/hazards-v2/ice-snowflake.png');
+  this.load.image('hazardIceSpike','/legacy-assets/dino-realms/hazards-v2/ice-spike.png');
+  this.load.image('hazardIceTornado','/legacy-assets/dino-realms/hazards-v2/ice-tornado.png');
+  this.load.image('hazardLightningStorm','/legacy-assets/dino-realms/hazards-v2/lightning-storm.png');
+
+  // REALM 4 — Magma Depths
+  this.load.image('hazardFireMeteor','/legacy-assets/dino-realms/hazards-v2/fire-meteor.png');
+  this.load.image('hazardMagmaEruption','/legacy-assets/dino-realms/hazards-v2/magma-eruption.png');
+
+  // REALM 5 — Portal Citadel
+  this.load.image('hazardPortalEnergy','/legacy-assets/dino-realms/hazards-v2/portal-energy.png');
+  this.load.image('ledgeFrozen','/legacy-assets/dino-realms/ledges/frozen-ledge.png');
+  this.load.image('ledgeMagma','/legacy-assets/dino-realms/ledges/magma-ledge.png');
+  this.load.image('ledgePortal','/legacy-assets/dino-realms/ledges/portal-ledge.png');
+
+  // Brutus pose artwork
+  this.load.image('brutusIdle','/legacy-assets/dino-realms/brutus/idle.png');
+  this.load.image('brutusRun','/legacy-assets/dino-realms/brutus/run.png');
+  this.load.image('brutusAttack','/legacy-assets/dino-realms/brutus/attack.png');
+  this.load.image('brutusCharge','/legacy-assets/dino-realms/brutus/charge.png');
+  this.load.image('brutusCrouch','/legacy-assets/dino-realms/brutus/crouch.png');
+  this.load.image('brutusFlyingAttack','/legacy-assets/dino-realms/brutus/flying_attack.png');
+  this.load.image('brutusLeap','/legacy-assets/dino-realms/brutus/leap.png');
+  this.load.image('brutusKnockedDown','/legacy-assets/dino-realms/brutus/knocked_down.png');
+  this.load.image('brutusRoar','/legacy-assets/dino-realms/brutus/roar.png');
+  this.load.image('brutusRockReady','/legacy-assets/dino-realms/brutus/rock_ready.png');
+  this.load.image('brutusRockThrow','/legacy-assets/dino-realms/brutus/rock_throw.png');
+  this.load.image('brutusRockProjectile','/legacy-assets/dino-realms/brutus/rock-projectile.png');
+  this.load.image('brutusSlam','/legacy-assets/dino-realms/brutus/slam.png');
+  this.load.image('brutusStunned','/legacy-assets/dino-realms/brutus/stunned.png');
+  this.load.image('brutusCrawl1','/legacy-assets/dino-realms/brutus/crawl_1.png');
+  this.load.image('brutusCrawl2','/legacy-assets/dino-realms/brutus/crawl_2.png');
+
+  // ========================================================
+  // BRUTUS PRIME — FINAL BOSS ART
+  // ========================================================
+  this.load.image('primeIdle','/legacy-assets/dino-realms/brutus-prime/prime-idle.png');
+  this.load.image('primeReady','/legacy-assets/dino-realms/brutus-prime/prime-ready.png');
+  this.load.image('primeRoar','/legacy-assets/dino-realms/brutus-prime/prime-roar.png');
+  this.load.image('primeCharge','/legacy-assets/dino-realms/brutus-prime/prime-charge.png');
+
+  // Brutus Prime animated charge sequence
+  this.load.image('primeCharge01','/legacy-assets/dino-realms/brutus-prime/charge/brutus-prime-charge-01.png');
+  this.load.image('primeCharge02','/legacy-assets/dino-realms/brutus-prime/charge/brutus-prime-charge-02.png');
+  this.load.image('primeCharge03','/legacy-assets/dino-realms/brutus-prime/charge/brutus-prime-charge-03.png');
+  this.load.image('primeCharge04','/legacy-assets/dino-realms/brutus-prime/charge/brutus-prime-charge-04.png');
+  this.load.image('primeCharge05','/legacy-assets/dino-realms/brutus-prime/charge/brutus-prime-charge-05.png');
+  this.load.image('primeCharge06','/legacy-assets/dino-realms/brutus-prime/charge/brutus-prime-charge-06.png');
+  this.load.image('primeCharge07','/legacy-assets/dino-realms/brutus-prime/charge/brutus-prime-charge-07.png');
+  this.load.image('primeCharge08','/legacy-assets/dino-realms/brutus-prime/charge/brutus-prime-charge-08.png');
+  this.load.image('primeCharge09','/legacy-assets/dino-realms/brutus-prime/charge/brutus-prime-charge-09.png');
+  this.load.image('primeForwardAttack','/legacy-assets/dino-realms/brutus-prime/prime-forward-attack.png');
+  this.load.image('primePowerPunch','/legacy-assets/dino-realms/brutus-prime/prime-power-punch.png');
+  this.load.image('primeImpactPunch','/legacy-assets/dino-realms/brutus-prime/prime-impact-punch.png');
+  this.load.image('primeHeavyPunch','/legacy-assets/dino-realms/brutus-prime/prime-heavy-punch.png');
+  this.load.image('primeSlam','/legacy-assets/dino-realms/brutus-prime/prime-slam.png');
+  this.load.image('primeSlamWave','/legacy-assets/dino-realms/brutus-prime/prime-slam-wave.png');
+  this.load.image('primeLeap','/legacy-assets/dino-realms/brutus-prime/prime-leap.png');
+  this.load.image('primeLeapImpact','/legacy-assets/dino-realms/brutus-prime/prime-leap-impact.png');
+  this.load.image('primeHurt','/legacy-assets/dino-realms/brutus-prime/prime-hurt.png');
+  this.load.image('primeDead','/legacy-assets/dino-realms/brutus-prime/prime-dead.png');
+
+  this.load.image('portalImg','/legacy-assets/portal.png');
+  this.load.image('crystal','/legacy-assets/crystal.png');
+  this.load.image('crystal2','/legacy-assets/crystal-v2.png');
+
+  // Realm hazard artwork
+  this.load.image(
+    'hazardJungleBranch',
+    '/legacy-assets/dino-realms/hazards/jungle-branch.png'
+  );
+
+  // Realm weather artwork
+  this.load.image('weatherJungle','/legacy-assets/dino-realms/weather/jungle-weather.png');
+  this.load.image('jungleLeaf','/legacy-assets/dino-realms/weather/jungle-leaf.png');
+  this.load.image('weatherCrystal','/legacy-assets/dino-realms/weather/crystal-weather.png');
+  this.load.image('weatherFrozen','/legacy-assets/dino-realms/weather/frozen-weather.png');
+  this.load.image('weatherMagma','/legacy-assets/dino-realms/weather/magma-weather.png');
+  this.load.image('weatherPortal','/legacy-assets/dino-realms/weather/portal-weather.png');
+
+  REALMS.forEach(r=>{
+    this.load.image(r.bg,r.file);
+  });
+}
+
+function create(){
+
+  // Every restarted realm begins with a clean visible camera.
+  this.cameras.main.resetFX();
+  this.cameras.main.setAlpha(1);
+  this.cameras.main.scrollX = 0;
+  this.cameras.main.scrollY = 0;
+
+  // Reset transition lock created by the previous realm.
+  this._portalTransition = false;
+
+  this.physics.world.setBounds(0,0,5000,540);
+  this.cameras.main.setBounds(0,0,5000,540);
+
+  cursors = this.input.keyboard.createCursorKeys();
+  bindTouchControls();
+
+  platforms = this.physics.add.staticGroup();
+  enemies = this.physics.add.group();
+
+  flyingEnemies = this.physics.add.group({
+    allowGravity:false
+  });
+
+  wingPickups = this.physics.add.group({
+    allowGravity:false,
+    immovable:true
+  });
+
+  realmHazards = this.physics.add.group({
+    allowGravity:false
+  });
+
+  playerFire = this.physics.add.group({
+    allowGravity:false
+  });
+
+  coins = this.physics.add.group({
+    allowGravity:false,
+    immovable:true
+  });
+
+  healthPickups = this.physics.add.group({
+    allowGravity:false,
+    immovable:true
+  });
+
+  furyPickups = this.physics.add.group({
+    allowGravity:false,
+    immovable:true
+  });
+
+  player = this.physics.add.sprite(120,390,'dinoIdle');
+
+  // New Dino artwork uses a large square canvas.
+  // Display it larger, then use a tight physics body around the dinosaur.
+  player.setDisplaySize(205,135);
+  player.setDepth(10);
+  player.setCollideWorldBounds(true);
+  player.setBounce(0.05);
+
+  // Keep collision based on the dinosaur itself, not the full PNG canvas.
+  player.body.setSize(
+    player.width * 0.42,
+    player.height * 0.68,
+    true
+  );
+
+  buildRealm.call(this);
+
+  this.physics.add.collider(player,platforms);
+  this.physics.add.collider(enemies,platforms);
+
+  createEnemyProjectileSystem(this);
+
+  this.physics.add.overlap(player,coins,collectCoin,null,this);
+  this.physics.add.overlap(
+    player,
+    healthPickups,
+    collectHealthPack,
+    null,
+    this
+  );
+
+  this.physics.add.overlap(
+    player,
+    furyPickups,
+    collectFuryEgg,
+    null,
+    this
+  );
+  this.physics.add.overlap(player,enemies,hitEnemy,null,this);
+  this.physics.add.overlap(player,flyingEnemies,hitEnemy,null,this);
+  this.physics.add.overlap(player,wingPickups,collectWings,null,this);
+
+  this.physics.add.overlap(
+    playerFire,
+    enemies,
+    hitByPlayerFire,
+    null,
+    this
+  );
+
+  this.physics.add.overlap(
+    playerFire,
+    flyingEnemies,
+    hitByPlayerFire,
+    null,
+    this
+  );
+
+  this.physics.add.overlap(
+    player,
+    realmHazards,
+    hitRealmHazard,
+    null,
+    this
+  );
+
+
+
+  weatherText = this.add.text(
+    20,82,
+    '',
+    {
+      font:'bold 16px Arial',
+      fill:'#ffcc66',
+      stroke:'#000',
+      strokeThickness:4
+    }
+  ).setScrollFactor(0).setDepth(101);
+
+  flightText = this.add.text(
+    20,52,
+    '',
+    {
+      font:'bold 18px Arial',
+      fill:'#66e7ff',
+      stroke:'#000',
+      strokeThickness:4
+    }
+  ).setScrollFactor(0).setDepth(101);
+
+  this.cameras.main.startFollow(player,true,.09,0);
+  this.cameras.main.setFollowOffset(0,0);
+  this.cameras.main.scrollY = 0;
+}
+
+function createEnemyProjectileSystem(scene){
+
+  enemyProjectiles = scene.physics.add.group({
+    allowGravity:true
+  });
+
+  scene.physics.add.collider(enemyProjectiles, platforms);
+
+  scene.physics.add.overlap(
+    player,
+    enemyProjectiles,
+    hitEnemyProjectile,
+    null,
+    scene
+  );
+}
+
+function buildRealm(){
+
+  const r = REALMS[realm];
+
+  document.getElementById('realmBanner').textContent =
+    `REALM ${realm+1}/${REALMS.length} • ${r.name}`;
+
+  // Clear only realm objects. Do NOT destroy the whole Phaser scene.
+
+  // Remove the previous realm portal before rebuilding.
+  if(portal && portal.active){
+    portal.destroy();
+  }
+  portal = null;
+
+  // Remove previous portal glow artwork.
+  if(this.realmPortalFX){
+    this.realmPortalFX.forEach(fx=>{
+      if(fx && fx.destroy) fx.destroy();
+    });
+  }
+  this.realmPortalFX = [];
+
+
+  // Clean final-boss UI/state if necessary.
+  if(bossAttackEvent){
+    bossAttackEvent.remove(false);
+    bossAttackEvent = null;
+  }
+
+  if(bossHudBg){
+    bossHudBg.destroy();
+    bossHudBg = null;
+  }
+
+  if(bossHudFill){
+    bossHudFill.destroy();
+    bossHudFill = null;
+  }
+
+  if(bossHudText){
+    bossHudText.destroy();
+    bossHudText = null;
+  }
+
+  bossPrime = null;
+
+  // Destroy visual ledge artwork from the previous realm.
+  // Physics platforms are cleared separately below.
+  if (this.realmLedgeArt) {
+    this.realmLedgeArt.forEach(art => {
+      if (art && art.destroy) art.destroy();
+    });
+  }
+  this.realmLedgeArt = [];
+
+  if (this.realmBackground) {
+    this.realmBackground.destroy();
+    this.realmBackground = null;
+  }
+
+  if (this.realmWeather) {
+    this.realmWeather.destroy();
+    this.realmWeather = null;
+  }
+
+  platforms.clear(true,true);
+  enemies.clear(true,true);
+  flyingEnemies.clear(true,true);
+  wingPickups.clear(true,true);
+  realmHazards.clear(true,true);
+  coins.clear(true,true);
+  healthPickups.clear(true,true);
+
+  if(furyPickups){
+    furyPickups.clear(true,true);
+  }
+
+  furyActive = false;
+  furyUntil = 0;
+
+  if(furyText){
+    furyText.destroy();
+    furyText = null;
+  }
+
+  hazardTimer = 50;
+
+  if(enemyProjectiles){
+    enemyProjectiles.clear(true,true);
+  }
+
+  flightActive = false;
+  flightUntil = 0;
+
+  const bg = this.add.image(0,0,r.bg)
+    .setOrigin(0,0)
+    .setDisplaySize(5000,540)
+    .setScrollFactor(0.15);
+
+  bg.setDepth(-20);
+  this.realmBackground = bg;
+
+  // Realm weather is rendered as particles, not a stretched overlay.
+
+  const ledgeTextures = [
+    'ledgeJungle',
+    'ledgeCrystal',
+    'ledgeFrozen',
+    'ledgeMagma',
+    'ledgePortal',
+    'ledgePortal'
+  ];
+
+  const ledgeTexture = ledgeTextures[realm];
+
+  // Main ground
+  // Physics remains invisible; realm ledge art supplies visuals.
+  for(let x=100;x<5000;x+=220){
+
+    const art = this.add.image(
+      x,
+      500,
+      ledgeTexture
+    );
+
+    art.setDisplaySize(250,125);
+    art.setDepth(1);
+
+    // Track artwork so it can be destroyed on realm change.
+    this.realmLedgeArt.push(art);
+
+    const p=this.add.rectangle(
+      x,
+      500,
+      230,
+      80,
+      0x000000,
+      0
+    );
+
+    this.physics.add.existing(p,true);
+    platforms.add(p);
+  }
+
+  // Varied platform layout per realm
+  const layouts = [
+
+    [
+      [500,390],[850,320],[1200,385],[1600,285],
+      [2050,370],[2450,270],[2900,350],[3400,250],
+      [3850,340],[4300,280]
+    ],
+
+    [
+      [450,360],[900,250],[1350,355],[1750,220],
+      [2150,330],[2600,210],[3000,350],[3450,250],
+      [3900,180],[4400,330]
+    ],
+
+    [
+      [400,400],[800,300],[1200,200],[1600,310],
+      [2050,180],[2450,290],[2850,150],[3350,320],
+      [3800,210],[4250,120]
+    ],
+
+    [
+      [480,350],[820,240],[1180,360],[1550,190],
+      [1950,330],[2350,165],[2750,310],[3150,190],
+      [3600,350],[4100,220],[4550,140]
+    ],
+
+    [
+      [420,375],[760,280],[1080,190],[1450,290],
+      [1800,160],[2200,260],[2550,140],[2950,250],
+      [3350,120],[3750,230],[4150,145],[4550,250]
+    ],
+
+    // Realm 6 — wide combat arena for Brutus Prime.
+    [
+      [700,350],[1250,275],[1800,350],
+      [2350,255],[2900,350],[3450,275],
+      [4000,350]
+    ]
+  ];
+
+  layouts[realm].forEach(([x,y],i)=>{
+
+    const width = 190 + ((i%3)*45);
+
+    const art = this.add.image(
+      x,
+      y + 34,
+      ledgeTexture
+    );
+
+    art.setDisplaySize(
+      width + 42,
+      88
+    );
+
+    art.setDepth(2);
+
+    // Track artwork so it can be destroyed on realm change.
+    this.realmLedgeArt.push(art);
+
+    const p = this.add.rectangle(
+      x,
+      y,
+      width,
+      22,
+      0x000000,
+      0
+    );
+
+    this.physics.add.existing(p,true);
+    platforms.add(p);
+  });
+
+  realmCoins = 0;
+
+  // ========================================================
+  // REALM 6 — FINAL BOSS
+  // Skip normal coins, pickups and enemy population.
+  // ========================================================
+  if(realm === REALMS.length - 1){
+    setupBrutusPrimeRealm.call(this);
+    return;
+  }
+
+  // Coins
+  for(let i=0;i<15;i++){
+
+    const x = 380 + i*285;
+    const y = 180 + ((i*77)%210);
+
+    const c=this.add.circle(x,y,10,0xffdd22);
+
+    this.physics.add.existing(c);
+
+    c.body.setAllowGravity(false);
+    c.body.setCircle(10);
+
+    coins.add(c);
+  }
+
+  // ------------------------------------------------
+  // FURY EGGS
+  // One per realm.
+  // ------------------------------------------------
+
+  [2650].forEach((x,index)=>{
+
+    const egg = furyPickups.create(
+      x,
+      370 - ((index % 2) * 45),
+      'furyEgg'
+    );
+
+    egg.setDisplaySize(54,60);
+    egg.setDepth(16);
+
+    if(egg.body){
+      egg.body.setAllowGravity(false);
+      egg.body.setSize(40,48,true);
+    }
+
+    this.tweens.add({
+      targets:egg,
+      y:egg.y - 16,
+      scaleX:egg.scaleX * 1.08,
+      scaleY:egg.scaleY * 1.08,
+      duration:720 + index*80,
+      yoyo:true,
+      repeat:-1
+    });
+  });
+
+
+  // ------------------------------------------------
+  // MID-REALM HEALTH PACK
+  // One pickup per realm, restores 2 HP up to max 5.
+  // ------------------------------------------------
+
+  const healthPack = healthPickups.create(
+    2500,
+    405,
+    'healthPack'
+  );
+
+  healthPack.setDisplaySize(72,76);
+  healthPack.setDepth(15);
+
+  if(healthPack.body){
+    healthPack.body.setAllowGravity(false);
+    healthPack.body.setSize(50,56,true);
+  }
+
+  // Floating collectible effect.
+  this.tweens.add({
+    targets:healthPack,
+    y:healthPack.y - 16,
+    scaleX:healthPack.scaleX * 1.08,
+    scaleY:healthPack.scaleY * 1.08,
+    duration:700,
+    yoyo:true,
+    repeat:-1
+  });
+
+
+  // ------------------------------------------------
+  // ENEMY SYSTEM V2
+  // basic / thrower / charger / heavy
+  // ------------------------------------------------
+
+  const enemyTypes = [
+    'basic',
+    'thrower',
+    'charger',
+    'basic',
+    'heavy'
+  ];
+
+  // Balanced enemy population.
+  // Weather hazards now provide part of each realm's difficulty.
+  const groundEnemyCounts = [5,5,6,6,7];
+  const groundEnemyCount = groundEnemyCounts[realm];
+
+  const groundStartX = 700;
+  const groundEndX = 4350;
+
+  const groundSpacing =
+    groundEnemyCount > 1
+      ? (groundEndX-groundStartX)/(groundEnemyCount-1)
+      : 0;
+
+  for(let i=0;i<groundEnemyCount;i++){
+
+    const type = enemyTypes[i % enemyTypes.length];
+
+    const e=enemies.create(
+      groundStartX + i*groundSpacing,
+      392,
+      'brutusIdle'
+    );
+
+    e.enemyType = type;
+    e.attackTimer = 60 + Math.floor(Math.random()*90);
+    e.dead = false;
+
+    let scaleW = 170;
+    let scaleH = 255;
+    let speed = r.enemySpeed;
+
+    if(type === 'thrower'){
+      scaleW = 165;
+      scaleH = 245;
+      speed *= 0.65;
+    }
+
+    if(type === 'charger'){
+      scaleW = 150;
+      scaleH = 225;
+      speed *= 1.55;
+    }
+
+    if(type === 'heavy'){
+      scaleW = 195;
+      scaleH = 285;
+      speed *= 0.55;
+    }
+
+    e.baseSpeed = speed;
+
+    e.visualW = scaleW;
+    e.visualH = scaleH;
+    e.poseLockUntil = 0;
+
+    e.setDisplaySize(scaleW,scaleH);
+
+    // New Brutus artwork: keep feet planted on platform.
+    e.setOrigin(0.5,0.95);
+
+    e.setDepth(8);
+    e.setAlpha(1);
+    e.setVisible(true);
+
+    if(e.body){
+      e.body.setSize(
+        type === 'heavy' ? 92 : 82,
+        type === 'heavy' ? 180 : 160,
+        true
+      );
+    }
+
+    e.setVelocityX(
+      i%2 ? speed : -speed
+    );
+
+    e.setBounce(1,0);
+    e.setCollideWorldBounds(true);
+  }
+
+
+
+  // ==================================================
+  // WINGS + FLYING ENEMIES
+  // ==================================================
+
+  // Flight is controlled directly by the FLY button.
+  // Legacy wing pickup removed because it is no longer required.
+
+  // Reduced flying-enemy population.
+  const flyingEnemyCounts = [1,1,1,2,2];
+  const flyingCount = flyingEnemyCounts[realm];
+
+  const flyingStartX = 1500;
+  const flyingEndX = 3900;
+
+  const flyingSpacing =
+    flyingCount > 1
+      ? (flyingEndX-flyingStartX)/(flyingCount-1)
+      : 0;
+
+  for(let i=0;i<flyingCount;i++){
+
+    const flyingX =
+      flyingCount === 1
+        ? 2700
+        : flyingStartX + i*flyingSpacing;
+
+    const f=flyingEnemies.create(
+      flyingX,
+      145+(i%3)*65,
+      'brutusFlyingAttack'
+    );
+
+    f.enemyType='flying';
+    f.dead=false;
+    f.baseY=f.y;
+    f.flightPhase=i*1.7;
+
+    f.visualW=175;
+    f.visualH=210;
+
+    f.setDisplaySize(
+      f.visualW,
+      f.visualH
+    );
+    f.setDepth(9);
+
+    if(f.body){
+      f.body.setAllowGravity(false);
+      f.body.setSize(82,130,true);
+    }
+  }
+
+
+  // Portal
+  portal=this.physics.add.staticImage(
+    4750,
+    385,
+    'portalImg'
+  );
+
+  portal.setDisplaySize(230,310);
+  portal.setDepth(12);
+  portal.setAlpha(1);
+  portal.setVisible(true);
+
+  // ==========================================================
+  // REALM-SPECIFIC PORTAL ENERGY
+  // Each realm gets its own portal color identity.
+  // ==========================================================
+  const PORTAL_COLORS = [
+    0x22ff88, // Emerald Jungle — emerald green
+    0x35ddff, // Crystal Valley — electric cyan
+    0xbdefff, // Frozen Peaks — ice blue
+    0xff642e, // Magma Depths — molten orange/red
+    0xc05cff  // Portal Citadel — cosmic purple
+  ];
+
+  const portalColor =
+    PORTAL_COLORS[realm] ?? 0xffffff;
+
+  // Portal Citadel's exit leads to the final boss.
+  // Keep the portal purple but give it a royal gold energy core.
+  const portalCoreColor =
+    realm === 4
+      ? 0xffcc55
+      : portalColor;
+
+  portal.setTint(portalColor);
+
+  // Colored energy glow behind portal.
+  const portalGlow = this.add.ellipse(
+    portal.x,
+    portal.y,
+    245,
+    325,
+    portalColor,
+    0.20
+  );
+
+  portalGlow.setDepth(11);
+
+  // Soft inner energy core.
+  const portalCore = this.add.ellipse(
+    portal.x,
+    portal.y,
+    125,
+    225,
+    portalCoreColor,
+    0.18
+  );
+
+  portalCore.setDepth(11);
+
+  this.realmPortalFX = [
+    portalGlow,
+    portalCore
+  ];
+
+  // Portal entry is handled by a reliable distance trigger
+  // inside update(), rather than a static-body overlap.
+
+
+
+  this.tweens.add({
+    targets: portalGlow,
+    alpha: { from: 0.10, to: 0.32 },
+    scaleX: { from: 0.92, to: 1.10 },
+    scaleY: { from: 0.94, to: 1.08 },
+    duration: 850,
+    yoyo: true,
+    repeat: -1,
+    ease: 'Sine.easeInOut'
+  });
+
+  this.tweens.add({
+    targets: portalCore,
+    alpha: { from: 0.08, to: 0.24 },
+    duration: 600,
+    yoyo: true,
+    repeat: -1,
+    ease: 'Sine.easeInOut'
+  });
+
+  portal.refreshBody();
+
+  this.tweens.add({
+    targets:portal,
+    scaleX:portal.scaleX * 1.08,
+    scaleY:portal.scaleY * 1.08,
+    alpha:0.82,
+    duration:650,
+    yoyo:true,
+    repeat:-1
+  });
+
+  // UI — separate HUD fields prevent mobile text overlap
+  const hudStyle = {
+    font:'bold 20px Arial',
+    fill:'#ffffff',
+    stroke:'#000000',
+    strokeThickness:5
+  };
+
+  this.scoreText = this.add.text(
+    20,20,'',hudStyle
+  )
+  .setOrigin(0,0)
+  .setScrollFactor(0)
+  .setDepth(100);
+
+  this.healthText = this.add.text(
+    480,20,'',hudStyle
+  )
+  .setOrigin(0.5,0)
+  .setScrollFactor(0)
+  .setDepth(100);
+
+  this.coinText = this.add.text(
+    940,20,'',hudStyle
+  )
+  .setOrigin(1,0)
+  .setScrollFactor(0)
+  .setDepth(100);
+
+  updateHud(this);
+}
+
+function updateHud(scene){
+
+  // ----------------------------------------------------------
+  // REX LIVES HUD
+  // ----------------------------------------------------------
+  if(
+    !livesText ||
+    !livesText.active
+  ){
+
+    livesText =
+      scene.add.text(
+        940,
+        18,
+        '',
+        {
+          font:'bold 20px Arial',
+          fill:'#ff6677',
+          stroke:'#000000',
+          strokeThickness:4
+        }
+      )
+      .setOrigin(
+        1,
+        0
+      )
+      .setScrollFactor(
+        0
+      )
+      .setDepth(
+        90
+      );
+  }
+
+  const fullLives =
+    '♥'.repeat(lives);
+
+  const lostLives =
+    '♡'.repeat(
+      MAX_LIVES - lives
+    );
+
+  livesText.setText(
+    `LIVES ${fullLives}${lostLives}`
+  );
+
+
+  if(!scene.scoreText || !scene.healthText || !scene.coinText) return;
+
+  scene.scoreText.setText(`SCORE ${score}`);
+  scene.healthText.setText(`HEALTH ${health}`);
+  scene.coinText.setText(`COINS ${realmCoins}/15`);
+}
+
+function collectFuryEgg(player,egg){
+
+  if(!egg || !egg.active) return;
+
+  egg.destroy();
+
+  furyActive = true;
+  furyUntil = this.time.now + FURY_DURATION;
+
+  score += 250;
+
+  // Switch immediately to Furious Rex.
+  player.setTexture('furyIdle');
+  player.setDisplaySize(205,135);
+
+  // Red glow around powered-up Rex.
+  player.setTint(0xff3344);
+
+  if(player.postFX){
+    try{
+      if(player._furyGlow){
+        player._furyGlow.destroy();
+      }
+
+      player._furyGlow =
+        player.postFX.addGlow(
+          0xff0000,
+          4,
+          0,
+          false,
+          0.15,
+          16
+        );
+    }catch(err){
+      console.warn('Fury glow unavailable:',err);
+    }
+  }
+
+  if(furyText){
+    furyText.destroy();
+  }
+
+  furyText = this.add.text(
+    480,
+    52,
+    'FURY 5.0',
+    {
+      font:'bold 22px Arial',
+      fill:'#ff3344',
+      stroke:'#000000',
+      strokeThickness:5
+    }
+  )
+  .setOrigin(0.5,0)
+  .setScrollFactor(0)
+  .setDepth(150);
+
+  updateHud(this);
+}
+
+
+
+// ============================================================
+// BRUTUS PRIME — FINAL BOSS REALM
+// ============================================================
+
+function setupBrutusPrimeRealm(){
+
+  bossMaxHP = 25;
+  bossHP = bossMaxHP;
+  bossPhase = 1;
+
+  // ========================================================
+  // BOSS REALM HEALTH PACK
+  // Hidden on the raised center platform.
+  // ========================================================
+  const bossHealthPack = healthPickups.create(
+    2350,
+    205,
+    'healthPack'
+  );
+
+  bossHealthPack.setDisplaySize(72,76);
+  bossHealthPack.setDepth(30);
+
+  if(bossHealthPack.body){
+    bossHealthPack.body.setAllowGravity(false);
+    bossHealthPack.body.setSize(50,56,true);
+  }
+
+  this.tweens.add({
+    targets:bossHealthPack,
+    y:bossHealthPack.y - 14,
+    scaleX:bossHealthPack.scaleX * 1.06,
+    scaleY:bossHealthPack.scaleY * 1.06,
+    duration:650,
+    yoyo:true,
+    repeat:-1
+  });
+
+  // Entering the final arena restores Rex for the boss battle.
+  health = MAX_HEALTH;
+  updateHud(this);
+
+  // Darken the Citadel slightly so the boss reads clearly.
+  const bossShade = this.add.rectangle(
+    2500,
+    270,
+    5000,
+    540,
+    0x180022,
+    0.20
+  );
+
+  bossShade.setDepth(-5);
+  bossShade.setScrollFactor(0.15);
+
+  if(!this.realmLedgeArt){
+    this.realmLedgeArt = [];
+  }
+
+  this.realmLedgeArt.push(bossShade);
+
+  // Arena title.
+  const intro = this.add.text(
+    480,
+    105,
+    'BRUTUS PRIME',
+    {
+      font:'bold 42px Arial',
+      fill:'#ffcf55',
+      stroke:'#240022',
+      strokeThickness:8
+    }
+  )
+  .setOrigin(0.5)
+  .setScrollFactor(0)
+  .setDepth(200);
+
+  const intro2 = this.add.text(
+    480,
+    153,
+    'CITADEL GUARDIAN',
+    {
+      font:'bold 19px Arial',
+      fill:'#d987ff',
+      stroke:'#000000',
+      strokeThickness:5
+    }
+  )
+  .setOrigin(0.5)
+  .setScrollFactor(0)
+  .setDepth(200);
+
+  this.tweens.add({
+    targets:[intro,intro2],
+    alpha:0,
+    delay:1800,
+    duration:900,
+    onComplete:()=>{
+      intro.destroy();
+      intro2.destroy();
+    }
+  });
+
+  // --------------------------------------------------------
+  // Boss health bar
+  // --------------------------------------------------------
+
+  bossHudBg = this.add.rectangle(
+    180,
+    35,
+    600,
+    24,
+    0x190022,
+    0.94
+  )
+  .setOrigin(0,0.5)
+  .setScrollFactor(0)
+  .setDepth(190);
+
+  bossHudFill = this.add.rectangle(
+    184,
+    35,
+    592,
+    16,
+    0xffcc55,
+    1
+  )
+  .setOrigin(0,0.5)
+  .setScrollFactor(0)
+  .setDepth(191);
+
+  bossHudText = this.add.text(
+    480,
+    35,
+    'BRUTUS PRIME  •  30 / 30',
+    {
+      font:'bold 16px Arial',
+      fill:'#ffffff',
+      stroke:'#000000',
+      strokeThickness:4
+    }
+  )
+  .setOrigin(0.5)
+  .setScrollFactor(0)
+  .setDepth(192);
+
+  // --------------------------------------------------------
+  // Create Brutus Prime
+  // --------------------------------------------------------
+
+  bossPrime = enemies.create(
+    4100,
+    392,
+    'primeRoar'
+  );
+
+  bossPrime.enemyType = 'boss';
+  bossPrime.dead = false;
+  bossPrime._bossInvulnerable = false;
+  bossPrime.visualW = 390;
+  bossPrime.visualH = 455;
+  bossPrime.baseSpeed = 150;
+
+  bossPrime.setDisplaySize(
+    bossPrime.visualW,
+    bossPrime.visualH
+  );
+
+  bossPrime.setOrigin(0.5,0.95);
+  bossPrime.setDepth(20);
+  bossPrime.setCollideWorldBounds(true);
+
+  if(bossPrime.body){
+    bossPrime.body.setSize(
+      150,
+      285,
+      true
+    );
+  }
+
+  // Dramatic entrance.
+  bossPrime.setAlpha(0);
+
+  this.tweens.add({
+    targets:bossPrime,
+    alpha:1,
+    duration:900
+  });
+
+  this.cameras.main.flash(
+    350,
+    180,
+    80,
+    255
+  );
+
+  // Boss attacks run independently from normal enemy behavior.
+  bossAttackEvent = this.time.addEvent({
+    delay:950,
+    loop:true,
+    callback:()=>{
+      brutusPrimeAttack.call(this);
+    }
+  });
+}
+
+
+function updateBrutusPrimeHud(){
+
+  if(!bossHudFill || !bossHudText) return;
+
+  const ratio =
+    Phaser.Math.Clamp(
+      bossHP / bossMaxHP,
+      0,
+      1
+    );
+
+  bossHudFill.setScale(
+    ratio,
+    1
+  );
+
+  bossHudText.setText(
+    `BRUTUS PRIME  •  ${Math.max(0,bossHP)} / ${bossMaxHP}`
+  );
+}
+
+
+function showBossPhase(scene,text,color){
+
+  const msg = scene.add.text(
+    480,
+    190,
+    text,
+    {
+      font:'bold 34px Arial',
+      fill:color,
+      stroke:'#000000',
+      strokeThickness:7
+    }
+  )
+  .setOrigin(0.5)
+  .setScrollFactor(0)
+  .setDepth(210);
+
+  scene.cameras.main.shake(
+    280,
+    0.008
+  );
+
+  scene.tweens.add({
+    targets:msg,
+    y:155,
+    alpha:0,
+    duration:1200,
+    onComplete:()=>msg.destroy()
+  });
+}
+
+
+function damageBrutusPrime(amount){
+
+  if(
+    !bossPrime ||
+    !bossPrime.active ||
+    bossPrime.dead ||
+    bossPrime._bossInvulnerable
+  ){
+    return;
+  }
+
+  bossPrime._bossInvulnerable = true;
+
+  bossHP = Math.max(
+    0,
+    bossHP - amount
+  );
+
+  score += 125 * amount;
+
+  updateBrutusPrimeHud();
+  updateHud(this);
+
+  setBrutusPose(
+    bossPrime,
+    'primeHurt'
+  );
+
+  bossPrime.setTint(0xffffff);
+
+  this.time.delayedCall(
+    170,
+    ()=>{
+      if(
+        bossPrime &&
+        bossPrime.active &&
+        !bossPrime.dead
+      ){
+        bossPrime.clearTint();
+
+        setBrutusPose(
+          bossPrime,
+          bossPhase === 3
+            ? 'primeReady'
+            : 'primeIdle'
+        );
+
+        bossPrime._bossInvulnerable = false;
+      }
+    }
+  );
+
+  const hpRatio =
+    bossHP / bossMaxHP;
+
+  // PHASE 2
+  if(
+    bossPhase === 1 &&
+    hpRatio <= 0.65
+  ){
+    bossPhase = 2;
+
+    bossPrime.setTint(0xc45cff);
+
+    showBossPhase(
+      this,
+      'PHASE II • PORTAL RAGE',
+      '#d987ff'
+    );
+
+    this.time.delayedCall(
+      600,
+      ()=>{
+        if(
+          bossPrime &&
+          bossPrime.active
+        ){
+          bossPrime.clearTint();
+        }
+      }
+    );
+  }
+
+  // PHASE 3
+  if(
+    bossPhase === 2 &&
+    hpRatio <= 0.30
+  ){
+    bossPhase = 3;
+
+    bossPrime.setTint(0xff3344);
+
+    showBossPhase(
+      this,
+      'PHASE III • PRIME FURY',
+      '#ff5566'
+    );
+  }
+
+  if(bossHP <= 0){
+    defeatBrutusPrime.call(this);
+  }
+}
+
+
+function brutusPrimeAttack(){
+
+  if(
+    !bossPrime ||
+    !bossPrime.active ||
+    bossPrime.dead ||
+    gameOver
+  ){
+    return;
+  }
+
+  const dir =
+    player.x < bossPrime.x
+      ? -1
+      : 1;
+
+  bossPrime.setFlipX(
+    dir < 0
+  );
+
+  const attack =
+    Phaser.Math.Between(
+      0,
+      bossPhase === 1 ? 2 : 3
+    );
+
+  // --------------------------------------------------------
+  // ROCK THROW
+  // --------------------------------------------------------
+  if(attack === 0){
+
+    setBrutusPose(
+      bossPrime,
+      'primeForwardAttack'
+    );
+
+    const rockCount =
+      bossPhase === 3
+        ? 3
+        : bossPhase === 2
+          ? 2
+          : 1;
+
+    for(let i=0;i<rockCount;i++){
+
+      this.time.delayedCall(
+        i * 180,
+        ()=>{
+          if(
+            !bossPrime ||
+            !bossPrime.active ||
+            bossPrime.dead
+          ){
+            return;
+          }
+
+          const rock =
+            enemyProjectiles.create(
+              bossPrime.x + dir*85,
+              bossPrime.y - 175,
+              'brutusRockProjectile'
+            );
+
+          rock.setDisplaySize(
+            bossPhase === 3 ? 66 : 54,
+            bossPhase === 3 ? 66 : 54
+          );
+
+          rock.sourceX = bossPrime.x;
+
+          if(rock.body){
+            rock.body.setAllowGravity(true);
+          }
+
+          rock.setVelocity(
+            dir * (
+              bossPhase === 3
+                ? 520
+                : bossPhase === 2
+                  ? 450
+                  : 380
+            ),
+            -260 - i*40
+          );
+        }
+      );
+    }
+
+    return;
+  }
+
+  // --------------------------------------------------------
+  // CHARGE — 9 FRAME BRUTUS PRIME RUSH
+  // --------------------------------------------------------
+  if(attack === 1){
+
+    const chargeFrames = [
+      'primeCharge01',
+      'primeCharge02',
+      'primeCharge03',
+      'primeCharge04',
+      'primeCharge05',
+      'primeCharge06',
+      'primeCharge07',
+      'primeCharge08',
+      'primeCharge09'
+    ];
+
+    // Faster phases animate and move more aggressively.
+    const chargeSpeed =
+      bossPhase === 3
+        ? 650
+        : bossPhase === 2
+          ? 540
+          : 450;
+
+    const frameDelay =
+      bossPhase === 3
+        ? 55
+        : bossPhase === 2
+          ? 65
+          : 75;
+
+    bossPrime.setVelocityX(0);
+
+    setBrutusPose(
+      bossPrime,
+      chargeFrames[0]
+    );
+
+    chargeFrames.forEach(
+      (frameKey,index)=>{
+
+        this.time.delayedCall(
+          index * frameDelay,
+          ()=>{
+
+            if(
+              !bossPrime ||
+              !bossPrime.active ||
+              bossPrime.dead
+            ){
+              return;
+            }
+
+            setBrutusPose(
+              bossPrime,
+              frameKey
+            );
+
+            // Wind-up on the first two frames,
+            // then explode forward.
+            if(index === 2){
+              bossPrime.setVelocityX(
+                dir * chargeSpeed
+              );
+            }
+
+            // Extra burst at the end of Phase III.
+            if(
+              bossPhase === 3 &&
+              index === 6
+            ){
+              bossPrime.setVelocityX(
+                dir * 760
+              );
+            }
+          }
+        );
+      }
+    );
+
+    const totalChargeTime =
+      chargeFrames.length * frameDelay + 80;
+
+    this.time.delayedCall(
+      totalChargeTime,
+      ()=>{
+
+        if(
+          bossPrime &&
+          bossPrime.active &&
+          !bossPrime.dead
+        ){
+          bossPrime.setVelocityX(0);
+
+          setBrutusPose(
+            bossPrime,
+            bossPhase === 3
+              ? 'primeReady'
+              : 'primeIdle'
+          );
+        }
+      }
+    );
+
+    return;
+  }
+
+  // --------------------------------------------------------
+  // GROUND SLAM
+  // --------------------------------------------------------
+  if(attack === 2){
+
+    setBrutusPose(
+      bossPrime,
+      'primeSlam'
+    );
+
+    this.time.delayedCall(
+      330,
+      ()=>{
+
+        if(
+          bossPrime &&
+          bossPrime.active &&
+          !bossPrime.dead
+        ){
+          const slamWave = this.add.image(
+            bossPrime.x,
+            440,
+            'primeSlamWave'
+          );
+
+          slamWave.setDepth(18);
+          slamWave.setAlpha(0.90);
+          slamWave.setDisplaySize(
+            bossPhase === 3 ? 700 : 560,
+            bossPhase === 3 ? 260 : 210
+          );
+
+          slamWave.setFlipX(
+            player.x < bossPrime.x
+          );
+
+          this.tweens.add({
+            targets:slamWave,
+            scaleX:slamWave.scaleX * 1.45,
+            scaleY:slamWave.scaleY * 1.12,
+            alpha:0,
+            duration:430,
+            ease:'Quad.easeOut',
+            onComplete:()=>slamWave.destroy()
+          });
+        }
+        if(
+          !bossPrime ||
+          !bossPrime.active ||
+          bossPrime.dead
+        ){
+          return;
+        }
+
+        this.cameras.main.shake(
+          240,
+          bossPhase === 3
+            ? 0.016
+            : 0.010
+        );
+
+        const distance =
+          Phaser.Math.Distance.Between(
+            player.x,
+            player.y,
+            bossPrime.x,
+            bossPrime.y
+          );
+
+        const radius =
+          bossPhase === 3
+            ? 520
+            : bossPhase === 2
+              ? 430
+              : 340;
+
+        if(distance < radius){
+          damagePlayer.call(
+            this,
+            bossPhase === 3 ? 2 : 1,
+            bossPrime.x
+          );
+        }
+      }
+    );
+
+    return;
+  }
+
+  // --------------------------------------------------------
+  // PHASE 2/3 LEAP ATTACK
+  // --------------------------------------------------------
+
+  setBrutusPose(
+    bossPrime,
+    'primeLeap'
+  );
+
+  bossPrime.setVelocity(
+    dir * (
+      bossPhase === 3
+        ? 420
+        : 330
+    ),
+    bossPhase === 3
+      ? -500
+      : -430
+  );
+
+  this.time.delayedCall(
+    700,
+    ()=>{
+      if(
+        bossPrime &&
+        bossPrime.active &&
+        !bossPrime.dead
+      ){
+        setBrutusPose(
+          bossPrime,
+          'primeLeapImpact'
+        );
+      }
+    }
+  );
+}
+
+
+function defeatBrutusPrime(){
+
+  if(
+    !bossPrime ||
+    bossPrime.dead
+  ){
+    return;
+  }
+
+  bossPrime.dead = true;
+
+  if(bossAttackEvent){
+    bossAttackEvent.remove(false);
+    bossAttackEvent = null;
+  }
+
+  score += 5000;
+
+  bossPrime.setVelocity(0,0);
+
+  if(bossPrime.body){
+    bossPrime.body.enable = false;
+  }
+
+  bossPrime.clearTint();
+
+  setBrutusPose(
+    bossPrime,
+    'primeDead'
+  );
+
+  this.cameras.main.shake(
+    500,
+    0.018
+  );
+
+  this.cameras.main.flash(
+    450,
+    255,
+    210,
+    80
+  );
+
+  const winText = this.add.text(
+    480,
+    220,
+    'REALMS CONQUERED',
+    {
+      font:'bold 48px Arial',
+      fill:'#ffdd66',
+      stroke:'#28002f',
+      strokeThickness:9
+    }
+  )
+  .setOrigin(0.5)
+  .setScrollFactor(0)
+  .setDepth(300);
+
+  const subText = this.add.text(
+    480,
+    275,
+    'BRUTUS PRIME DEFEATED',
+    {
+      font:'bold 22px Arial',
+      fill:'#ffffff',
+      stroke:'#000000',
+      strokeThickness:5
+    }
+  )
+  .setOrigin(0.5)
+  .setScrollFactor(0)
+  .setDepth(300);
+
+  this.tweens.add({
+    targets:bossPrime,
+    alpha:0.35,
+    scaleX:bossPrime.scaleX * 0.92,
+    scaleY:bossPrime.scaleY * 0.92,
+    duration:1500
+  });
+
+  this.time.delayedCall(
+    2600,
+    ()=>{
+      winText.destroy();
+      subText.destroy();
+
+      finishGame.call(
+        this,
+        true
+      );
+    }
+  );
+}
+
+
+function collectHealthPack(player,pack){
+
+  if(!pack || !pack.active) return;
+
+  // Don't waste the pickup when already at full health.
+  if(health >= MAX_HEALTH) return;
+
+  pack.destroy();
+
+  health = Math.min(
+    MAX_HEALTH,
+    health + HEALTH_PACK_RESTORE
+  );
+
+  updateHud(this);
+
+  // Brief confirmation above Rex.
+  const msg = this.add.text(
+    player.x,
+    player.y - 90,
+    '+ HEALTH',
+    {
+      font:'bold 24px Arial',
+      fill:'#ff5577',
+      stroke:'#000000',
+      strokeThickness:5
+    }
+  )
+  .setOrigin(0.5)
+  .setDepth(120);
+
+  this.tweens.add({
+    targets:msg,
+    y:msg.y - 45,
+    alpha:0,
+    duration:900,
+    onComplete:()=>msg.destroy()
+  });
+}
+
+
+function collectWings(player,wing){
+
+  if(!wing || !wing.active) return;
+
+  wing.destroy();
+
+  flightActive=true;
+  flightUntil=this.time.now + FLIGHT_DURATION;
+
+  score+=500;
+
+  player.setTint(0x88eeff);
+
+  updateHud(this);
+}
+
+function collectCoin(player,c){
+
+  c.destroy();
+
+  realmCoins++;
+  score+=100;
+
+  updateHud(this);
+}
+
+function hitEnemy(player,e){
+
+  if(!e || e.dead) return;
+
+  // ========================================================
+  // BRUTUS PRIME
+  // Boss cannot be one-hit defeated like normal enemies.
+  // ========================================================
+  if(e.enemyType === 'boss'){
+
+    const playerBottom =
+      player.body
+        ? player.body.bottom
+        : player.y + player.displayHeight/2;
+
+    const enemyTop =
+      e.body
+        ? e.body.top
+        : e.y - e.displayHeight/2;
+
+    const falling =
+      player.body &&
+      player.body.velocity.y > 120;
+
+    const stomp =
+      falling &&
+      playerBottom <= enemyTop + 55;
+
+    if(stomp){
+      damageBrutusPrime.call(this,3);
+      player.setVelocityY(-520);
+      return;
+    }
+
+    damagePlayer.call(this,1,e.x);
+    return;
+  }
+
+  // ----------------------------------------------
+  // STOMP ATTACK
+  // Falling onto an enemy defeats it.
+  // ----------------------------------------------
+
+  const playerBottom =
+    player.body ? player.body.bottom : player.y + player.displayHeight/2;
+
+  const enemyTop =
+    e.body ? e.body.top : e.y - e.displayHeight/2;
+
+  const falling =
+    player.body && player.body.velocity.y > 120;
+
+  const stomp =
+    falling &&
+    playerBottom <= enemyTop + 38;
+
+  if(stomp){
+
+    e.dead=true;
+
+    score +=
+      e.enemyType === 'heavy' ? 500 :
+      e.enemyType === 'charger' ? 350 :
+      e.enemyType === 'thrower' ? 300 :
+      200;
+
+    if(e.disableBody){
+      e.disableBody(true,true);
+    }else{
+      e.destroy();
+    }
+
+    player.setVelocityY(-430);
+
+    updateHud(this);
+
+    return;
+  }
+
+  damagePlayer.call(this,1,e.x);
+}
+
+function damagePlayer(amount,sourceX){
+
+  // Furious Rex cannot take damage.
+  if(furyActive) return;
+
+  if(
+    player._hurt ||
+    player._respawnInvulnerable ||
+    gameOver
+  ) return;
+
+  player._hurt=true;
+
+  health=Math.max(0,health-amount);
+
+  updateHud(this);
+
+  player.setTint(0xff5555);
+
+  if(sourceX !== undefined){
+    player.setVelocityX(
+      player.x < sourceX ? -260 : 260
+    );
+  }
+
+  player.setVelocityY(-350);
+
+  this.time.delayedCall(900,()=>{
+    if(player && player.active){
+      if(furyActive){
+        player.setTint(0xff3344);
+      }else{
+        player.clearTint();
+      }
+
+      player._hurt=false;
+    }
+  });
+
+  if(health<=0){
+    loseLife.call(this);
+  }
+}
+
+
+// ============================================================
+// LOSE LIFE / RESPAWN
+// ============================================================
+function loseLife(){
+
+  if(gameOver) return;
+
+  lives = Math.max(
+    0,
+    lives - 1
+  );
+
+  updateHud(this);
+
+  // No lives left = true game over.
+  if(lives <= 0){
+
+    finishGame.call(
+      this,
+      false
+    );
+
+    return;
+  }
+
+  // ----------------------------------------------------------
+  // KEEP RUN PROGRESS
+  // ----------------------------------------------------------
+  // Score, coins and realm stay untouched.
+  // Only Rex is restored.
+  // ----------------------------------------------------------
+
+  health = MAX_HEALTH;
+
+  // Destroy dangerous loose hazards/projectiles so the player
+  // doesn't immediately respawn into another hit.
+  try{
+    if(
+      realmHazards &&
+      realmHazards.clear
+    ){
+      realmHazards.clear(
+        true,
+        true
+      );
+    }
+  }catch(err){}
+
+  try{
+    if(
+      enemyProjectiles &&
+      enemyProjectiles.clear
+    ){
+      enemyProjectiles.clear(
+        true,
+        true
+      );
+    }
+  }catch(err){}
+
+  player.setVelocity(
+    0,
+    0
+  );
+
+  // Return Rex near the beginning of the CURRENT realm.
+  player.setPosition(
+    140,
+    360
+  );
+
+  if(player.body){
+
+    player.body.enable = true;
+
+    player.body.setSize(
+      player.width * 0.42,
+      player.height * 0.68,
+      true
+    );
+  }
+
+  player._isCrouching = false;
+
+  player.setTexture(
+    'dinoIdle'
+  );
+
+  player.setDisplaySize(
+    205,
+    135
+  );
+
+  player.clearTint();
+
+  // ----------------------------------------------------------
+  // 1.8 SECOND RESPAWN PROTECTION
+  // ----------------------------------------------------------
+
+  player._hurt = true;
+  player._respawnInvulnerable = true;
+
+  player.setAlpha(
+    0.55
+  );
+
+  if(
+    this.cameras &&
+    this.cameras.main
+  ){
+    this.cameras.main.flash(
+      180,
+      255,
+      255,
+      255
+    );
+  }
+
+  updateHud(this);
+
+  // Brief respawn notification.
+  const respawnText =
+    this.add.text(
+      480,
+      145,
+      `REX RESPAWNED  •  ${lives} ${
+        lives === 1
+          ? 'LIFE'
+          : 'LIVES'
+      } LEFT`,
+      {
+        font:'bold 24px Arial',
+        fill:'#ffffff',
+        stroke:'#000000',
+        strokeThickness:5
+      }
+    )
+    .setOrigin(.5)
+    .setScrollFactor(0)
+    .setDepth(120);
+
+  this.tweens.add({
+    targets:respawnText,
+    alpha:0,
+    y:125,
+    delay:850,
+    duration:650,
+    onComplete:()=>{
+      if(respawnText){
+        respawnText.destroy();
+      }
+    }
+  });
+
+  this.time.delayedCall(
+    1800,
+    ()=>{
+      if(
+        player &&
+        player.active
+      ){
+
+        player._respawnInvulnerable = false;
+        player._hurt = false;
+        player.setAlpha(1);
+
+        if(furyActive){
+          player.setTint(
+            0xff3344
+          );
+        }else{
+          player.clearTint();
+        }
+      }
+    }
+  );
+}
+
+function hitRealmHazard(player,hazard){
+
+  if(!hazard || !hazard.active) return;
+
+  const sourceX = hazard.x;
+
+  // Most hazards disappear after impact.
+  // Persistent lava vents remain alive.
+  if(!hazard.persistent){
+    hazard.destroy();
+  }
+
+  damagePlayer.call(
+    this,
+    hazard.damage || 1,
+    sourceX
+  );
+}
+
+function hitEnemyProjectile(player,projectile){
+
+  if(!projectile || !projectile.active) return;
+
+  const sourceX =
+    projectile.sourceX !== undefined
+      ? projectile.sourceX
+      : projectile.x;
+
+  projectile.destroy();
+
+  damagePlayer.call(this,1,sourceX);
+}
+
+function enterPortal(){
+
+  console.log(
+    '🌀 ENTER PORTAL CALLED',
+    'realm=', realm + 1,
+    'transition=', this._portalTransition,
+    'gameOver=', gameOver,
+    'player=', player?.x, player?.y,
+    'portal=', portal?.x, portal?.y
+  );
+
+  if(gameOver || this._portalTransition) return;
+
+  this._portalTransition = true;
+  score += 1000;
+
+  player.setVelocity(0,0);
+
+  if(player.body){
+    player.body.enable = false;
+  }
+
+  // Pull Dino into the portal.
+  this.tweens.add({
+    targets:player,
+    x:portal.x,
+    y:portal.y,
+    scaleX:player.scaleX * 0.18,
+    scaleY:player.scaleY * 0.18,
+    alpha:0,
+    angle:360,
+    duration:650,
+    ease:'Sine.easeIn',
+
+    onComplete:()=>{
+
+      if(realm < REALMS.length-1){
+
+        realm++;
+
+        console.log(
+          '🌀 ADVANCING TO REALM',
+          realm + 1
+        );
+
+        // Build the next realm inside the SAME Phaser scene.
+        try {
+          buildRealm.call(this);
+
+          console.log(
+            '✅ BUILD REALM COMPLETE',
+            realm + 1
+          );
+        } catch(err) {
+          console.error(
+            '❌ BUILD REALM FAILED',
+            'realm=', realm + 1,
+            err
+          );
+          throw err;
+        }
+
+        // Restore Dino at the beginning of the new realm.
+        player.setTexture('dinoIdle');
+        player.setPosition(120,390);
+        player.setDisplaySize(205,135);
+        player.setScale(
+          205 / player.width,
+          135 / player.height
+        );
+
+        player.setAlpha(1);
+        player.setAngle(0);
+        player.setFlipX(false);
+        player.setVelocity(0,0);
+
+        if(player.body){
+          player.body.enable = true;
+          player.body.setSize(
+            player.width * 0.42,
+            player.height * 0.68,
+            true
+          );
+          player.body.reset(120,390);
+        }
+
+        // Return camera to the start of the new realm.
+        this.cameras.main.stopFollow();
+        this.cameras.main.scrollX = 0;
+        this.cameras.main.scrollY = 0;
+        this.cameras.main.startFollow(player,true,.09,0);
+
+        this._portalTransition = false;
+
+      }else{
+
+        finishGame.call(this,true);
+      }
+    }
+  });
+}
+
+function finishGame(win){
+
+  if(gameOver) return;
+
+  gameOver=true;
+
+  this.physics.pause();
+
+  const finalScore =
+    score +
+    (health*500) +
+    (win?5000:0);
+
+  this.add.rectangle(
+    480,270,
+    620,260,
+    0x000000,.88
+  )
+  .setScrollFactor(0)
+  .setDepth(100);
+
+  this.add.text(
+    480,220,
+    win?'ALL REALMS COMPLETE':'GAME OVER',
+    {
+      font:'bold 34px Arial',
+      fill:win?'#00ffc8':'#ff5577'
+    }
+  )
+  .setOrigin(.5)
+  .setScrollFactor(0)
+  .setDepth(101);
+
+  this.add.text(
+    480,290,
+    `FINAL SCORE ${finalScore}`,
+    {
+      font:'bold 26px Arial',
+      fill:'#ffd700'
+    }
+  )
+  .setOrigin(.5)
+  .setScrollFactor(0)
+  .setDepth(101);
+
+  if(typeof arcadeSubmitScore==='function'){
+    arcadeSubmitScore(
+      'dino-realms',
+      finalScore
+    ).catch(console.error);
+  }
+}
+
+function spawnRealmHazard(scene){
+
+  if(!realmHazards || !player) return;
+
+  // ----------------------------------------------
+  // REALM 1 — EMERALD JUNGLE
+  // Falling branches
+  // ----------------------------------------------
+
+  if(realm === 0){
+
+    const h = realmHazards.create(
+      player.x + Phaser.Math.Between(250,700),
+      -30,
+      'hazardJungleBranch'
+    );
+
+    h.hazardType='branch';
+    h.damage=1;
+
+    h.setDisplaySize(110,60);
+    h.clearTint();
+
+    h.body.setAllowGravity(false);
+
+    h.setVelocityY(
+      Phaser.Math.Between(190,280)
+    );
+
+    weatherText?.setText(
+      '🌿 JUNGLE: FALLING BRANCHES'
+    );
+  }
+
+  // ----------------------------------------------
+  // REALM 2 — CRYSTAL VALLEY
+  // Falling crystal shards
+  // ----------------------------------------------
+
+  else if(realm === 1){
+
+    const h = realmHazards.create(
+      player.x + Phaser.Math.Between(-300,650),
+      -60,
+      'hazardCrystalStorm'
+    );
+
+    h.hazardType='crystalStorm';
+    h.damage=1;
+
+    h.setDisplaySize(58,92);
+    h.clearTint();
+
+    h.body.setAllowGravity(false);
+
+    h.setVelocityY(
+      Phaser.Math.Between(240,340)
+    );
+
+    weatherText?.setText(
+      '💎 CRYSTAL STORM'
+    );
+  }
+
+  // ----------------------------------------------
+  // REALM 3 — FROZEN PEAKS
+  // Snow is visual-only. Actual hazards are:
+  // ice spikes, tornadoes and lightning storms.
+  // ----------------------------------------------
+
+  else if(realm === 2){
+
+    const roll = Phaser.Math.Between(0,99);
+
+    // 55% — FALLING ICE SPIKE
+    if(roll < 55){
+
+      const h = realmHazards.create(
+        player.x + Phaser.Math.Between(-250,650),
+        -90,
+        'hazardIceSpike'
+      );
+
+      h.hazardType = 'iceSpike';
+      h.damage = 1;
+
+      h.setDisplaySize(52,105);
+      h.clearTint();
+
+      h.body.setAllowGravity(false);
+
+      h.setVelocity(
+        Phaser.Math.Between(-25,25),
+        Phaser.Math.Between(260,340)
+      );
+
+      weatherText?.setText('🧊 FALLING ICE');
+    }
+
+    // 27% — ICE TORNADO
+    else if(roll < 82){
+
+      const fromLeft = Math.random() < 0.5;
+
+      const h = realmHazards.create(
+        fromLeft ? player.x - 620 : player.x + 620,
+        390,
+        'hazardIceTornado'
+      );
+
+      h.hazardType = 'iceTornado';
+      h.damage = 1;
+
+      h.setDisplaySize(145,180);
+      h.clearTint();
+
+      h.body.setAllowGravity(false);
+
+      h.setVelocityX(
+        fromLeft
+          ? Phaser.Math.Between(155,210)
+          : -Phaser.Math.Between(155,210)
+      );
+
+      // Make tornado rotate while moving.
+      // Reverse tornado rotation so the visual spins naturally.
+      h.spinSpeed = 0;
+
+      weatherText?.setText('🌪️ ICE TORNADO');
+    }
+
+    // 18% — LIGHTNING STORM
+    else{
+
+      const fromLeft = Math.random() < 0.5;
+
+      const h = realmHazards.create(
+        fromLeft ? player.x - 620 : player.x + 620,
+        Phaser.Math.Between(125,250),
+        'hazardLightningStorm'
+      );
+
+      h.hazardType = 'lightningStorm';
+      h.damage = 1;
+
+      h.setDisplaySize(190,160);
+      h.clearTint();
+
+      h.body.setAllowGravity(false);
+
+      h.setVelocityX(
+        fromLeft ? 175 : -175
+      );
+
+      weatherText?.setText('⚡ FROZEN LIGHTNING STORM');
+    }
+  }
+
+
+  // ----------------------------------------------
+  // REALM 4 — MAGMA DEPTHS
+  // Meteors rain from above.
+  // Magma eruptions burst from the ground.
+  // ----------------------------------------------
+
+  else if(realm === 3){
+
+    const roll = Phaser.Math.Between(0,99);
+
+    // 65% — FIRE METEOR
+    if(roll < 65){
+
+      const h = realmHazards.create(
+        player.x + Phaser.Math.Between(280,720),
+        -100,
+        'hazardFireMeteor'
+      );
+
+      h.hazardType = 'fireMeteor';
+      h.damage = 1;
+
+      h.setDisplaySize(105,105);
+      h.clearTint();
+
+      h.body.setAllowGravity(false);
+
+      h.setVelocity(
+        Phaser.Math.Between(-190,-100),
+        Phaser.Math.Between(260,350)
+      );
+
+      h.setAngle(-35);
+
+      weatherText?.setText('☄️ FIRE METEOR');
+    }
+
+    // 35% — MAGMA ERUPTION
+    else{
+
+      const h = realmHazards.create(
+        player.x + Phaser.Math.Between(260,560),
+        445,
+        'hazardMagmaEruption'
+      );
+
+      h.hazardType = 'magmaEruption';
+      h.damage = 1;
+
+      // It remains dangerous briefly rather than disappearing
+      // immediately after spawning.
+      h.persistent = true;
+
+      h.setDisplaySize(145,175);
+      h.clearTint();
+
+      h.body.setAllowGravity(false);
+      h.setVelocity(0,0);
+
+      weatherText?.setText('🌋 MAGMA ERUPTION');
+
+      // Warning pulse / eruption growth.
+      h.setScale(
+        h.scaleX * 0.65,
+        h.scaleY * 0.25
+      );
+
+      scene.tweens.add({
+        targets:h,
+        scaleX:h.scaleX / 0.65,
+        scaleY:h.scaleY / 0.25,
+        duration:220,
+        ease:'Back.Out'
+      });
+
+      // Eruption lasts only a short time.
+      scene.time.delayedCall(1500,()=>{
+        if(h && h.active){
+          h.destroy();
+        }
+      });
+    }
+  }
+
+
+  // ----------------------------------------------
+  // REALM 5 — PORTAL CITADEL
+  // Unstable portal energy attacks from both sides.
+  // ----------------------------------------------
+
+  else{
+
+    const fromLeft = Math.random() < 0.5;
+
+    const h = realmHazards.create(
+      fromLeft ? player.x - 650 : player.x + 650,
+      Phaser.Math.Between(110,370),
+      'hazardPortalEnergy'
+    );
+
+    h.hazardType = 'portalEnergy';
+    h.damage = 1;
+
+    h.setDisplaySize(150,105);
+    h.clearTint();
+
+    h.body.setAllowGravity(false);
+
+    h.setVelocityX(
+      fromLeft
+        ? Phaser.Math.Between(230,310)
+        : -Phaser.Math.Between(230,310)
+    );
+
+    h.setFlipX(!fromLeft);
+
+    // Slight rotation makes the energy feel unstable.
+    h.spinSpeed = fromLeft ? 1.5 : -1.5;
+
+    weatherText?.setText('🌀 PORTAL ENERGY SURGE');
+  }
+}
+
+
+
+
+// ============================================================
+// FROZEN PEAKS — AMBIENT SNOW
+//
+// IMPORTANT:
+// These sprites are NOT physics objects.
+// They are NOT members of realmHazards.
+// They NEVER collide with or damage Dino.
+// ============================================================
+
+let frozenSnowflakes = [];
+let nextFrozenSnowAt = 0;
+
+function updateFrozenSnowWeather(scene){
+
+  // Snow exists ONLY in Frozen Peaks.
+  if(realm !== 2){
+
+    frozenSnowflakes.forEach(flake=>{
+      if(flake && flake.active){
+        flake.destroy();
+      }
+    });
+
+    frozenSnowflakes = [];
+    nextFrozenSnowAt = 0;
+    return;
+  }
+
+  const now = scene.time.now;
+
+  // Frequent light snowfall.
+  if(now >= nextFrozenSnowAt){
+
+    // Spawn 1–3 flakes each cycle.
+    const count = Phaser.Math.Between(1,3);
+
+    for(let i=0;i<count;i++){
+
+      // Place relative to current camera so snow follows player.
+      const camera = scene.cameras.main;
+
+      const flake = scene.add.image(
+        camera.scrollX + Phaser.Math.Between(20,940),
+        Phaser.Math.Between(-60,20),
+        'weatherSnowflake'
+      );
+
+      // Small flakes — never giant foreground objects.
+      const size = Phaser.Math.Between(12,28);
+
+      flake.setDisplaySize(size,size);
+      flake.setDepth(35);
+
+      flake.setAlpha(
+        Phaser.Math.FloatBetween(0.45,0.85)
+      );
+
+      flake.snowVX =
+        Phaser.Math.Between(-28,18);
+
+      flake.snowVY =
+        Phaser.Math.Between(55,105);
+
+      flake.snowSpin =
+        Phaser.Math.FloatBetween(-1.4,1.4);
+
+      frozenSnowflakes.push(flake);
+    }
+
+    nextFrozenSnowAt =
+      now + Phaser.Math.Between(100,190);
+  }
+
+  const dt =
+    scene.game.loop.delta / 1000;
+
+  frozenSnowflakes =
+    frozenSnowflakes.filter(flake=>{
+
+      if(!flake || !flake.active){
+        return false;
+      }
+
+      flake.x += flake.snowVX * dt;
+      flake.y += flake.snowVY * dt;
+
+      flake.rotation +=
+        flake.snowSpin * dt;
+
+      // Gentle side-to-side drift.
+      flake.x +=
+        Math.sin((now + flake.y) * 0.003) *
+        12 * dt;
+
+      const camera = scene.cameras.main;
+
+      if(
+        flake.y > 570 ||
+        flake.x < camera.scrollX - 150 ||
+        flake.x > camera.scrollX + 1110
+      ){
+        flake.destroy();
+        return false;
+      }
+
+      return true;
+    });
+}
+
+let jungleLeafParticles = [];
+let nextJungleLeafAt = 0;
+
+function updateJungleLeafWeather(scene){
+
+  // Leaves exist ONLY in Emerald Jungle.
+  if(realm !== 0){
+    jungleLeafParticles.forEach(leaf=>{
+      if(leaf && leaf.active) leaf.destroy();
+    });
+    jungleLeafParticles = [];
+    return;
+  }
+
+  const now = scene.time.now;
+
+  // Spawn one leaf roughly every 300-650ms.
+  if(now >= nextJungleLeafAt){
+
+    nextJungleLeafAt =
+      now + Phaser.Math.Between(300,650);
+
+    const cam = scene.cameras.main;
+
+    const leaf = scene.add.image(
+      cam.scrollX + cam.width + 60,
+      Phaser.Math.Between(40,Math.max(80,cam.height-100)),
+      'jungleLeaf'
+    );
+
+    // VISUAL ONLY. No physics body is ever created.
+    leaf.setDepth(20);
+
+    const size =
+      Phaser.Math.Between(20,42);
+
+    leaf.setDisplaySize(
+      size,
+      Math.round(size * 0.72)
+    );
+
+    leaf.setAlpha(
+      Phaser.Math.FloatBetween(0.55,0.90)
+    );
+
+    leaf.setAngle(
+      Phaser.Math.Between(0,359)
+    );
+
+    leaf.windX =
+      Phaser.Math.FloatBetween(1.4,3.2);
+
+    leaf.windY =
+      Phaser.Math.FloatBetween(0.25,1.0);
+
+    leaf.spin =
+      Phaser.Math.FloatBetween(-2.2,2.2);
+
+    leaf.swayPhase =
+      Phaser.Math.FloatBetween(0,Math.PI*2);
+
+    jungleLeafParticles.push(leaf);
+  }
+
+  jungleLeafParticles =
+    jungleLeafParticles.filter(leaf=>{
+
+      if(!leaf || !leaf.active) return false;
+
+      leaf.swayPhase += 0.045;
+
+      leaf.x -= leaf.windX;
+
+      leaf.y +=
+        leaf.windY +
+        Math.sin(leaf.swayPhase) * 0.55;
+
+      leaf.angle += leaf.spin;
+
+      const cam = scene.cameras.main;
+
+      if(
+        leaf.x < cam.scrollX - 100 ||
+        leaf.y > cam.scrollY + cam.height + 100
+      ){
+        leaf.destroy();
+        return false;
+      }
+
+      return true;
+    });
+}
+
+
+function updateRealmHazards(scene){
+
+  if(!realmHazards) return;
+
+  hazardTimer--;
+
+  if(hazardTimer <= 0){
+
+    spawnRealmHazard(scene);
+
+    // Hazard cadence by realm.
+    // Emerald Jungle branches are intentionally sparse.
+    if(realm === 0){
+
+      // Emerald Jungle — sparse branches.
+      hazardTimer = Phaser.Math.Between(240,360);
+
+    }else if(realm === 1){
+
+      // Crystal Valley.
+      hazardTimer = Phaser.Math.Between(100,145);
+
+    }else if(realm === 2){
+
+      // Frozen Peaks — snowfall is constant, hazards are occasional.
+      hazardTimer = Phaser.Math.Between(125,185);
+
+    }else if(realm === 3){
+
+      // Magma Depths.
+      hazardTimer = Phaser.Math.Between(115,170);
+
+    }else{
+
+      // Portal Citadel.
+      hazardTimer = Phaser.Math.Between(95,145);
+    }
+  }
+
+  realmHazards.children.iterate(h=>{
+
+    if(!h || !h.active) return;
+
+    // Animate tornadoes and portal energy.
+    if(h.spinSpeed){
+      h.angle += h.spinSpeed;
+    }
+
+    if(
+      h.y > 650 ||
+      h.y < -180 ||
+      h.x < -300 ||
+      h.x > 5400
+    ){
+      h.destroy();
+    }
+  });
+}
+
+
+function shootPlayerFire(scene){
+
+  if(!player || !player.active) return;
+
+  const now = scene.time.now;
+
+  if(now < nextPlayerFireAt) return;
+
+  nextPlayerFireAt = now + 320;
+
+  const dir = player.flipX ? -1 : 1;
+
+  // Exact mouth anchor
+  const x = player.x + (dir * 76);
+  const y = player.y - 29;
+
+  const flame = scene.physics.add.image(
+    x,
+    y,
+    'playerFireProjectile'
+  );
+
+  // Full flame size + tip anchored directly at Dino's mouth
+  flame.setDisplaySize(260,90);
+
+  if(dir > 0){
+    flame.setOrigin(0,0.5);
+    flame.setFlipX(false);
+  }else{
+    flame.setOrigin(1,0.5);
+    flame.setFlipX(true);
+  }
+
+  flame.setDepth(12);
+
+  flame.body.setAllowGravity(false);
+  flame.body.setVelocityX(dir * 720);
+
+  // Damage hitbox stays inside visible flame
+  flame.body.setSize(72,30,true);
+
+  playerFire.add(flame);
+
+  scene.time.delayedCall(
+    650,
+    ()=>{
+      if(flame && flame.active){
+        flame.destroy();
+      }
+    }
+  );
+}
+
+function hitByPlayerFire(fire,e){
+
+  if(!fire || !fire.active) return;
+
+  fire.destroy();
+
+  if(!e || !e.active || e.dead) return;
+
+  // Brutus Prime has real HP.
+  if(e.enemyType === 'boss'){
+    damageBrutusPrime.call(this,1);
+    return;
+  }
+
+  e.dead = true;
+
+  if(e.body){
+    e.body.enable = false;
+  }
+
+  e.destroy();
+
+  score += 150;
+}
+
+
+
+function setBrutusPose(e,texture){
+
+  if(!e || !e.active) return;
+
+  if(e.texture.key === texture) return;
+
+  e.setTexture(texture);
+
+  // Preserve visual size despite different source PNG dimensions.
+  if(e.visualW && e.visualH){
+    e.setDisplaySize(
+      e.visualW,
+      e.visualH
+    );
+  }
+}
+
+function update(){
+
+  if(!player || gameOver) return;
+
+  // ==========================================================
+  // PORTAL ENTRY — WORLD POSITION TRIGGER
+  // No Arcade Physics overlap required.
+  // ==========================================================
+  if(
+    portal &&
+    !this._portalTransition &&
+    player.x >= portal.x - 220
+  ){
+    console.log(
+      '🌀 PORTAL X TRIGGER',
+      'realm=', realm + 1,
+      'playerX=', player.x,
+      'portalX=', portal.x
+    );
+
+    enterPortal.call(this);
+    return;
+  }
+
+  // ==================================================
+  // FURY TIMER
+  // ==================================================
+
+  if(furyActive){
+
+    const remaining =
+      Math.max(0,furyUntil-this.time.now);
+
+    if(furyText){
+      furyText.setText(
+        `FURY ${(remaining/1000).toFixed(1)}`
+      );
+    }
+
+    if(remaining <= 0){
+
+      furyActive = false;
+      furyUntil = 0;
+
+      player.clearTint();
+
+      if(player._furyGlow){
+        try{
+          player._furyGlow.destroy();
+        }catch(err){}
+
+        player._furyGlow = null;
+      }
+
+      if(furyText){
+        furyText.destroy();
+        furyText = null;
+      }
+    }
+  }
+
+  updateRealmHazards(this);
+  updateJungleLeafWeather(this);
+
+  // Frozen Peaks ambient snowfall — visual only.
+  updateFrozenSnowWeather(this);
+
+  const speed = 300 + realm*20;
+
+  const pad = getPhysicalControls();
+
+  const moveLeft =
+    cursors.left.isDown ||
+    touchControls.left ||
+    pad.left;
+
+  const moveRight =
+    cursors.right.isDown ||
+    touchControls.right ||
+    pad.right;
+
+  const jumpHeld =
+    cursors.up.isDown ||
+    touchControls.jump ||
+    pad.jump ||
+    pad.up;
+
+  // Hold DOWN / S / mobile DOWN / gamepad DOWN to crouch.
+  const crouchHeld =
+    cursors.down.isDown ||
+    this.input.keyboard.addKey(
+      Phaser.Input.Keyboard.KeyCodes.S
+    ).isDown ||
+    touchControls.down ||
+    pad.down;
+
+  const flyHeld =
+    touchControls.fly ||
+    pad.fly;
+
+  const fireHeld =
+    touchControls.fire ||
+    pad.fire;
+
+  // ==================================================
+  // STABLE CROUCH STATE
+  // ==================================================
+
+  // Stable grounded detection.
+  // Arcade Physics can briefly drop blocked.down between
+  // platform contacts, which was making Rex flash into
+  // jump/air poses while visually standing on the ground.
+  const physicsGrounded =
+    player.body.blocked.down ||
+    player.body.touching.down;
+
+  if(physicsGrounded){
+    player._lastGroundedAt =
+      this.time.now;
+  }
+
+  const grounded =
+    physicsGrounded ||
+    (
+      player._lastGroundedAt &&
+      this.time.now - player._lastGroundedAt < 100 &&
+      Math.abs(player.body.velocity.y) < 90
+    );
+
+  // Only ENTER crouch while grounded.
+  // Once crouched, keep the state until DOWN/S is released.
+  if(
+    crouchHeld &&
+    grounded &&
+    !player._isCrouching
+  ){
+    player._isCrouching = true;
+
+    player.body.setSize(
+      player.width * 0.58,
+      player.height * 0.42,
+      true
+    );
+  }
+
+  // Release crouch explicitly.
+  // Do not use blocked.down to decide when to release.
+  if(
+    !crouchHeld &&
+    player._isCrouching
+  ){
+    player._isCrouching = false;
+
+    player.body.setSize(
+      player.width * 0.42,
+      player.height * 0.68,
+      true
+    );
+  }
+
+  const crouching =
+    player._isCrouching === true;
+
+  const moveSpeed =
+    crouching
+      ? speed * 0.34
+      : speed;
+
+  if(moveLeft){
+
+    player.setVelocityX(-moveSpeed);
+    player.flipX=true;
+
+  }else if(moveRight){
+
+    player.setVelocityX(moveSpeed);
+    player.flipX=false;
+
+  }else{
+
+    player.setVelocityX(0);
+  }
+
+  if(
+    jumpHeld &&
+    !crouching &&
+    grounded
+  ){
+    player.setVelocityY(-620);
+  }
+
+  // ==================================================
+  // DINO POSE SYSTEM
+  // ==================================================
+
+  const vx = player.body.velocity.x;
+  const vy = player.body.velocity.y;
+
+  let dinoTexture = 'dinoIdle';
+
+  if(crouching){
+
+    dinoTexture = 'dinoCrouch';
+
+  }else if(fireHeld){
+
+    shootPlayerFire(this);
+
+  }else if(
+    !grounded &&
+    flyHeld
+  ){
+
+    dinoTexture = 'dinoFlying';
+
+  }else if(!grounded){
+
+    if(vy < -40){
+      dinoTexture = 'dinoJump';
+    }else{
+      dinoTexture = 'dinoAir';
+    }
+
+  }else if(Math.abs(vx) > 20){
+
+    dinoTexture = 'dinoRun';
+  }
+
+  // Use matching Furious Rex pose while Fury is active.
+  if(furyActive){
+
+    const furyMap = {
+      dinoIdle:'furyIdle',
+      dinoCrouch:'dinoCrouch',
+      dinoRun:'furyRun',
+      dinoJump:'furyJump',
+      dinoAir:'furyAir',
+      dinoFlying:'furyFlying'
+    };
+
+    dinoTexture =
+      furyMap[dinoTexture] || 'furyIdle';
+  }
+
+  // --------------------------------------------------
+  // VISUAL POSE SWITCH
+  // IMPORTANT:
+  // Never modify player.y here.
+  // --------------------------------------------------
+
+  if(player.texture.key !== dinoTexture){
+
+    player.setTexture(
+      dinoTexture
+    );
+
+    if(dinoTexture === 'dinoCrouch'){
+
+      // Same character scale; pose artwork supplies
+      // the actual visual crouch.
+      player.setDisplaySize(
+        205,
+        130
+      );
+
+    }else{
+
+      player.setDisplaySize(
+        205,
+        135
+      );
+    }
+  }
+
+  // ==================================================
+  // PLAYER FLIGHT
+  // Dedicated FLY button.
+  // ==================================================
+
+  if(!player.body.blocked.down){
+
+    if(flyHeld){
+
+      // Powered upward flight.
+      if(player.body.velocity.y > -260){
+        player.setVelocityY(-260);
+      }
+
+    }else if(
+      player.texture.key === 'dinoFlying' &&
+      player.body.velocity.y > 150
+    ){
+
+      // Gentle glide after releasing FLY.
+      player.setVelocityY(150);
+    }
+  }
+
+
+
+  // ==================================================
+  // FLYING ENEMY AI
+  // ==================================================
+
+  if(flyingEnemies){
+
+    flyingEnemies.children.iterate(f=>{
+
+      if(!f || !f.active || f.dead) return;
+
+      f.flightPhase += .035;
+
+      f.y =
+        f.baseY +
+        Math.sin(f.flightPhase)*55;
+
+      const dx=player.x-f.x;
+      const distance=Math.abs(dx);
+
+      if(distance < 650){
+
+        f.setVelocityX(
+          dx > 0
+            ? 115 + realm*15
+            : -(115 + realm*15)
+        );
+
+      }else{
+
+        f.setVelocityX(
+          Math.sin(f.flightPhase*.4)*90
+        );
+      }
+
+      f.flipX =
+        f.body.velocity.x < 0;
+    });
+  }
+
+
+  // ==================================================
+  // ENEMY AI V2
+  // ==================================================
+
+  enemies.children.iterate(e=>{
+
+    if(!e || !e.body || !e.active || e.dead) return;
+
+    const dx = player.x - e.x;
+    const distance = Math.abs(dx);
+    const direction = dx >= 0 ? 1 : -1;
+
+    // Face the player.
+    e.setFlipX(direction < 0);
+
+    // ----------------------------------------------
+    // BASIC
+    // Patrols and reverses at walls.
+    // ----------------------------------------------
+
+    if(e.enemyType === 'basic'){
+
+      setBrutusPose(
+        e,
+        Math.abs(e.body.velocity.x) > 8
+          ? 'brutusRun'
+          : 'brutusIdle'
+      );
+
+      if(
+        e.body.blocked.left ||
+        e.body.blocked.right
+      ){
+        e.setVelocityX(-e.body.velocity.x);
+      }
+
+      if(Math.abs(e.body.velocity.x) < 10){
+        e.setVelocityX(
+          direction * (e.baseSpeed || 80)
+        );
+      }
+    }
+
+    // ----------------------------------------------
+    // THROWER
+    // Keeps some distance and throws rocks.
+    // ----------------------------------------------
+
+    else if(e.enemyType === 'thrower'){
+
+      if(
+        this.time.now < (e.poseLockUntil || 0)
+      ){
+        setBrutusPose(e,'brutusRockThrow');
+      }else{
+        setBrutusPose(e,'brutusRockReady');
+      }
+
+      e.attackTimer =
+        (e.attackTimer || 0) - 1;
+
+      if(distance < 520){
+
+        if(distance < 220){
+          e.setVelocityX(
+            -direction * e.baseSpeed
+          );
+        }else{
+          e.setVelocityX(
+            direction * e.baseSpeed * 0.35
+          );
+        }
+
+        if(
+          e.attackTimer <= 0 &&
+          enemyProjectiles
+        ){
+
+          e.poseLockUntil =
+            this.time.now + 260;
+
+          setBrutusPose(
+            e,
+            'brutusRockThrow'
+          );
+
+          const rock =
+            enemyProjectiles.create(
+              e.x,
+              e.y - 35,
+              'brutusRockProjectile'
+            );
+
+          // Visible Brutus flying-rock artwork.
+          rock.setDisplaySize(72,48);
+          rock.clearTint();
+
+          // Collision covers the boulder, not its motion trail.
+          rock.body.setSize(34,34,true);
+
+          rock.sourceX=e.x;
+
+          rock.setVelocity(
+            direction * (260 + realm*20),
+            -330
+          );
+
+          rock.setBounce(.25);
+
+          rock.setCollideWorldBounds(false);
+
+          e.attackTimer =
+            Math.max(
+              65,
+              125 - realm*10
+            );
+        }
+
+      }else{
+
+        e.setVelocityX(
+          direction * e.baseSpeed
+        );
+      }
+    }
+
+    // ----------------------------------------------
+    // CHARGER
+    // Rushes the player when nearby.
+    // ----------------------------------------------
+
+    else if(e.enemyType === 'charger'){
+
+      setBrutusPose(
+        e,
+        distance < 500
+          ? 'brutusCharge'
+          : 'brutusRun'
+      );
+
+      const chargeSpeed =
+        distance < 500
+          ? e.baseSpeed * 1.75
+          : e.baseSpeed;
+
+      e.setVelocityX(
+        direction * chargeSpeed
+      );
+    }
+
+    // ----------------------------------------------
+    // HEAVY
+    // Slow pursuit.
+    // ----------------------------------------------
+
+    else if(e.enemyType === 'heavy'){
+
+      if(distance < 150){
+        setBrutusPose(
+          e,
+          'brutusSlam'
+        );
+      }else if(distance < 650){
+        setBrutusPose(
+          e,
+          'brutusRun'
+        );
+      }else{
+        setBrutusPose(
+          e,
+          'brutusCrouch'
+        );
+      }
+
+      if(distance < 650){
+
+        e.setVelocityX(
+          direction * e.baseSpeed
+        );
+
+      }else if(
+        e.body.blocked.left ||
+        e.body.blocked.right
+      ){
+
+        e.setVelocityX(
+          -e.body.velocity.x
+        );
+      }
+    }
+
+    e.flipX =
+      e.body.velocity.x < 0;
+  });
+
+
+  // ----------------------------------------------
+  // PROJECTILE CLEANUP
+  // ----------------------------------------------
+
+  if(enemyProjectiles){
+
+    enemyProjectiles.children.iterate(rock=>{
+
+      if(!rock || !rock.active) return;
+
+      if(
+        rock.y > 700 ||
+        rock.x < -200 ||
+        rock.x > 5400
+      ){
+        rock.destroy();
+      }
+    });
+  }
+}
+</script>
+
+</body>
+</html>
+
+<style>
+@media (max-width:700px){
+  canvas{
+    margin-top:92px !important;
+  }
+}
+</style>
