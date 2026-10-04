@@ -1,0 +1,77 @@
+{
+  "idle": {
+    "file": "idle.png",
+    "width": 280,
+    "height": 347
+  },
+  "crouch": {
+    "file": "crouch.png",
+    "width": 285,
+    "height": 274
+  },
+  "roar": {
+    "file": "roar.png",
+    "width": 323,
+    "height": 359
+  },
+  "run": {
+    "file": "run.png",
+    "width": 369,
+    "height": 321
+  },
+  "charge": {
+    "file": "charge.png",
+    "width": 413,
+    "height": 272
+  },
+  "leap": {
+    "file": "leap.png",
+    "width": 339,
+    "height": 303
+  },
+  "flying_attack": {
+    "file": "flying_attack.png",
+    "width": 400,
+    "height": 298
+  },
+  "slam": {
+    "file": "slam.png",
+    "width": 385,
+    "height": 308
+  },
+  "rock_ready": {
+    "file": "rock_ready.png",
+    "width": 323,
+    "height": 370
+  },
+  "rock_throw": {
+    "file": "rock_throw.png",
+    "width": 430,
+    "height": 307
+  },
+  "stunned": {
+    "file": "stunned.png",
+    "width": 293,
+    "height": 289
+  },
+  "knocked_down": {
+    "file": "knocked_down.png",
+    "width": 423,
+    "height": 197
+  },
+  "crawl_1": {
+    "file": "crawl_1.png",
+    "width": 354,
+    "height": 204
+  },
+  "crawl_2": {
+    "file": "crawl_2.png",
+    "width": 323,
+    "height": 236
+  },
+  "attack": {
+    "file": "attack.png",
+    "width": 361,
+    "height": 290
+  }
+}
