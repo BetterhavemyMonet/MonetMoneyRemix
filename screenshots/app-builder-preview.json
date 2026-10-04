@@ -1,0 +1,36 @@
+{
+  "url": "http://127.0.0.1:8080/",
+  "viewports": {
+    "desktop": {
+      "width": 1280,
+      "height": 800,
+      "status": 200,
+      "title": "Monet Money Arcade",
+      "hasCanvas": false,
+      "bodyTextLen": 1511,
+      "bodyTextHash": "3b58c17396b4679433a93c88097ad3d10e6e7a00a2db6973ae4e0b1293967d18",
+      "bodyTextPrefix": "MONET MONEY ARCADE Arcade Games Compete Boards Wallet Tournament",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/app-builder-preview.png"
+    },
+    "mobile": {
+      "width": 390,
+      "height": 844,
+      "status": 200,
+      "title": "Monet Money Arcade",
+      "hasCanvas": false,
+      "bodyTextLen": 1482,
+      "bodyTextHash": "b21e0f0fc7eddcdb85130cc4f9980505f8ec1a5c580e96eca9c7e1b33cd90be4",
+      "bodyTextPrefix": "MONET MONEY ARCADE Connect SOLANA SKILL ARCADE Monet Money Arcad",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/app-builder-preview-mobile.png"
+    }
+  },
+  "brandWarnings": [],
+  "authWarnings": [],
+  "verdictFile": "/workspace/screenshots/app-builder-preview.json"
+}

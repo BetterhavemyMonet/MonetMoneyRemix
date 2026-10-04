@@ -1,0 +1,159 @@
+@import "tailwindcss";
+
+@theme {
+  --font-display: "Bangers", "Impact", system-ui, sans-serif;
+  --font-sans: "Orbitron", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  --color-bg: #050308;
+  --color-bg-elev: #0c0614;
+  --color-surface: #140a1c;
+  --color-surface-2: #1c1028;
+  --color-fg: #fff5fb;
+  --color-muted: #b39bb0;
+  --color-subtle: #7a6278;
+  --color-border: #3a2044;
+  --color-border-strong: #62305c;
+  --color-primary: #ff4488;
+  --color-primary-fg: #ffffff;
+  --color-accent: #a855ff;
+  --color-ice: #00f0ff;
+  --color-warn: #ffd85a;
+  --color-danger: #ff664d;
+  --color-ok: #00ffa3;
+
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-xl: 28px;
+
+  --shadow-glow: 0 0 40px color-mix(in oklab, var(--color-primary) 28%, transparent);
+}
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  html,
+  body,
+  #app {
+    min-height: 100%;
+    background: var(--color-bg);
+    color: var(--color-fg);
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background:
+      radial-gradient(ellipse 80% 60% at 50% 8%, color-mix(in oklab, var(--color-accent) 16%, transparent), transparent 70%),
+      radial-gradient(ellipse 50% 40% at 12% 88%, color-mix(in oklab, var(--color-primary) 12%, transparent), transparent 60%),
+      radial-gradient(ellipse 50% 50% at 90% 18%, color-mix(in oklab, var(--color-ice) 8%, transparent), transparent 60%),
+      var(--color-bg);
+  }
+
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+
+  h1, h2, h3 {
+    font-family: var(--font-display);
+    text-wrap: balance;
+    letter-spacing: 0.04em;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  ::selection {
+    background: color-mix(in oklab, var(--color-primary) 40%, transparent);
+    color: var(--color-fg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+.arcade-grid {
+  background-image:
+    linear-gradient(color-mix(in oklab, var(--color-primary) 9%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in oklab, var(--color-primary) 9%, transparent) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: radial-gradient(ellipse at center, black 30%, transparent 78%);
+}
+
+.glass-panel {
+  background: color-mix(in oklab, var(--color-surface) 78%, transparent);
+  border: 1px solid color-mix(in oklab, var(--color-fg) 10%, transparent);
+  box-shadow: 0 18px 50px color-mix(in oklab, black 42%, transparent);
+  backdrop-filter: blur(16px);
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+.hero-glitch {
+  position: relative;
+  font-family: var(--font-display);
+  letter-spacing: 0.08em;
+  line-height: 0.88;
+  text-shadow:
+    0 0 40px color-mix(in oklab, var(--color-primary) 70%, transparent),
+    0 0 80px color-mix(in oklab, var(--color-accent) 40%, transparent);
+}
+
+.hero-glitch::before,
+.hero-glitch::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.hero-glitch::before {
+  color: var(--color-primary);
+  animation: glitch-a 4.8s infinite;
+}
+
+.hero-glitch::after {
+  color: var(--color-ice);
+  animation: glitch-b 4.8s infinite;
+}
+
+@keyframes glitch-a {
+  0%, 80%, 100% { opacity: 0; transform: none; clip-path: none; }
+  81% { opacity: 0.85; transform: translate(-6px, -2px); clip-path: polygon(0 10%, 100% 10%, 100% 38%, 0 38%); }
+  83% { opacity: 0.7; transform: translate(4px, 1px); clip-path: polygon(0 55%, 100% 55%, 100% 70%, 0 70%); }
+  84% { opacity: 0; clip-path: none; }
+}
+
+@keyframes glitch-b {
+  0%, 80%, 100% { opacity: 0; transform: none; clip-path: none; }
+  81% { opacity: 0.8; transform: translate(6px, 2px); clip-path: polygon(0 58%, 100% 58%, 100% 86%, 0 86%); }
+  83% { opacity: 0.65; transform: translate(-5px, -1px); clip-path: polygon(0 20%, 100% 20%, 100% 42%, 0 42%); }
+  84% { opacity: 0; clip-path: none; }
+}
+
+.scanlines {
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 3px,
+    color-mix(in oklab, white 1.4%, transparent) 3px,
+    color-mix(in oklab, white 1.4%, transparent) 4px
+  );
+  pointer-events: none;
+}
