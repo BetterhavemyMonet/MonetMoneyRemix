@@ -11,7 +11,7 @@ export const Route = createFileRoute("/portfolio")({ component: PortfolioPage })
 
 function PortfolioPage() {
   const wallet = useWallet();
-  const tag = wallet.connected ? wallet.tag : "GUEST";
+  const tag = wallet.connected ? wallet.tag : "DISCONNECTED";
   const plays = useQuery({
     queryKey: ["plays", tag],
     queryFn: () => listRecentPlays({ data: { playerTag: tag } }),
@@ -39,7 +39,7 @@ function PortfolioPage() {
       {!wallet.connected ? (
         <div className="mt-6 rounded-xl border border-border bg-surface p-6 text-center">
           <p className="text-sm text-muted">Connect your wallet to view your portfolio</p>
-          <Button className="mt-4" onClick={() => wallet.connectGuest()}>
+          <Button className="mt-4" onClick={() => wallet.connectPhantom()}>
             Connect wallet
           </Button>
         </div>

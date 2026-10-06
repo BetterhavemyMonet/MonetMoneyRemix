@@ -1,8 +1,25 @@
 /**
- * Read-only snapshot of the existing Monet backend contract.
- * Live values are fetched from /api/config when CORS allows.
- * Payments, treasury, and PayPal capture stay on that backend.
+ * Authoritative Monet backend configuration.
+ *
+ * Production token, treasury, pricing, payout, challenge,
+ * PayPal, network and RPC values come from /api/config.
+ *
+ * This service intentionally fails closed when required
+ * backend configuration is unavailable or malformed.
  */
+
+export type ChallengeWager = {
+  usd: number;
+  monet: number;
+  baseUnits: number;
+};
+
+export type TournamentPayout = {
+  firstPercent: number;
+  secondPercent: number;
+  thirdPercent: number;
+  treasuryPercent: number;
+};
 
 export type MonetConfig = {
   mint: string;
@@ -14,92 +31,335 @@ export type MonetConfig = {
   entrySol: number;
   winnerPercent: number;
   treasuryPercent: number;
-  wagersUsd: number[];
+  challengeWagers: ChallengeWager[];
+  tournamentFieldSizes: number[];
+  tournamentPayout: TournamentPayout;
   paypalUsd: number[];
   network: string;
   publicRpcUrl: string;
 };
 
-export const FALLBACK_CONFIG: MonetConfig = {
-  mint: "6eACLGXCGdw9D5zb5eBKyFnFNTX9pTihDEpZQ7gYAX1b",
-  symbol: "MONET",
-  decimals: 6,
-  treasuryAddress: "epktxKugBkeft5ZCdv4SCLdsHA1HsMueLod5nXUDQQw",
-  entryMonet: 0.0125,
-  entryUsd: 0.99,
-  entrySol: 0.008,
-  winnerPercent: 0.8,
-  treasuryPercent: 0.2,
-  wagersUsd: [0.99, 4.99, 9.99],
-  paypalUsd: [10, 20, 50, 100],
-  network: "mainnet-beta",
-  publicRpcUrl: "https://api.mainnet-beta.solana.com",
-};
-
-export const LIVE_API = "https://monet-backend-95vi.onrender.com";
+export const LIVE_API =
+  "https://monet-backend-95vi.onrender.com";
 
 export function apiOrigin() {
-  return (import.meta.env.VITE_ARCADE_API_BASE as string | undefined) || LIVE_API;
+  return (
+    import.meta.env.VITE_ARCADE_API_BASE as
+      | string
+      | undefined
+  ) || LIVE_API;
 }
 
 let cached: MonetConfig | null = null;
 let inflight: Promise<MonetConfig> | null = null;
 
-function fromPayload(d: Record<string, unknown>): MonetConfig {
-  const token = (d.token ?? {}) as Record<string, unknown>;
-  const entry = (d.entry ?? {}) as Record<string, unknown>;
-  const payout = (d.payout ?? {}) as Record<string, unknown>;
-  const challenge = (d.challenge ?? {}) as Record<string, unknown>;
-  const paypal = (d.paypal ?? {}) as Record<string, unknown>;
-  return {
-    mint: String(token.mint || FALLBACK_CONFIG.mint),
-    symbol: String(token.symbol || "MONET"),
-    decimals: Number(token.decimals ?? 6),
-    treasuryAddress: String(d.treasuryAddress || FALLBACK_CONFIG.treasuryAddress),
-    entryMonet: Number(entry.monet ?? FALLBACK_CONFIG.entryMonet),
-    entryUsd: Number(entry.usd ?? FALLBACK_CONFIG.entryUsd),
-    entrySol: Number(entry.sol ?? FALLBACK_CONFIG.entrySol),
-    winnerPercent: Number(payout.winnerPercent ?? 0.8),
-    treasuryPercent: Number(payout.treasuryPercent ?? 0.2),
-    wagersUsd: Array.isArray(challenge.wagersUsd)
-      ? (challenge.wagersUsd as number[])
-      : FALLBACK_CONFIG.wagersUsd,
-    paypalUsd: Array.isArray(paypal.packagesUsd)
-      ? (paypal.packagesUsd as number[])
-      : FALLBACK_CONFIG.paypalUsd,
-    network: String(d.network || "mainnet-beta"),
-    publicRpcUrl: String(d.publicRpcUrl || FALLBACK_CONFIG.publicRpcUrl),
-  };
+function requiredString(
+  value: unknown,
+  name: string,
+): string {
+  if (
+    typeof value !== "string" ||
+    value.trim().length === 0
+  ) {
+    throw new Error(
+      `Backend config missing ${name}`,
+    );
+  }
+
+  return value.trim();
 }
 
-export async function loadMonetConfig(): Promise<MonetConfig> {
+function requiredNumber(
+  value: unknown,
+  name: string,
+): number {
+  const number = Number(value);
+
+  if (!Number.isFinite(number)) {
+    throw new Error(
+      `Backend config missing ${name}`,
+    );
+  }
+
+  return number;
+}
+
+function positiveNumber(
+  value: unknown,
+  name: string,
+): number {
+  const number = requiredNumber(value, name);
+
+  if (number <= 0) {
+    throw new Error(
+      `Backend config has invalid ${name}`,
+    );
+  }
+
+  return number;
+}
+
+function percent(
+  value: unknown,
+  name: string,
+): number {
+  const number = requiredNumber(value, name);
+
+  if (number < 0 || number > 1) {
+    throw new Error(
+      `Backend config has invalid ${name}`,
+    );
+  }
+
+  return number;
+}
+
+function fromPayload(
+  d: Record<string, unknown>,
+): MonetConfig {
+  const token =
+    (d.token ?? {}) as Record<string, unknown>;
+
+  const entry =
+    (d.entry ?? {}) as Record<string, unknown>;
+
+  const payout =
+    (d.payout ?? {}) as Record<string, unknown>;
+
+  const challenge =
+    (d.challenge ?? {}) as Record<string, unknown>;
+
+  const tournament =
+    (d.tournament ?? {}) as Record<string, unknown>;
+
+  const tournamentPayout =
+    (tournament.payout ?? {}) as Record<string, unknown>;
+
+  const paypal =
+    (d.paypal ?? {}) as Record<string, unknown>;
+
+  const challengeWagers =
+    Array.isArray(challenge.wagers)
+      ? (
+          challenge.wagers as Record<
+            string,
+            unknown
+          >[]
+        )
+          .map((wager) => ({
+            usd: Number(wager.usd),
+            monet: Number(wager.monet),
+            baseUnits: Number(wager.baseUnits),
+          }))
+          .filter(
+            (wager) =>
+              Number.isFinite(wager.usd) &&
+              Number.isFinite(wager.monet) &&
+              Number.isFinite(
+                wager.baseUnits,
+              ) &&
+              wager.usd > 0 &&
+              wager.monet > 0 &&
+              wager.baseUnits > 0,
+          )
+      : [];
+
+  const tournamentFieldSizes =
+    Array.isArray(tournament.fieldSizes)
+      ? tournament.fieldSizes
+          .map(Number)
+          .filter(
+            (value) =>
+              Number.isSafeInteger(value) &&
+              value > 1,
+          )
+      : [];
+
+  if (tournamentFieldSizes.length === 0) {
+    throw new Error(
+      "Backend config missing tournament.fieldSizes",
+    );
+  }
+
+  const parsedTournamentPayout: TournamentPayout = {
+    firstPercent: percent(
+      tournamentPayout.firstPercent,
+      "tournament.payout.firstPercent",
+    ),
+
+    secondPercent: percent(
+      tournamentPayout.secondPercent,
+      "tournament.payout.secondPercent",
+    ),
+
+    thirdPercent: percent(
+      tournamentPayout.thirdPercent,
+      "tournament.payout.thirdPercent",
+    ),
+
+    treasuryPercent: percent(
+      tournamentPayout.treasuryPercent,
+      "tournament.payout.treasuryPercent",
+    ),
+  };
+
+  const paypalUsd =
+    Array.isArray(paypal.packagesUsd)
+      ? paypal.packagesUsd
+          .map(Number)
+          .filter(
+            (value) =>
+              Number.isFinite(value) &&
+              value > 0,
+          )
+      : [];
+
+  const config: MonetConfig = {
+    mint: requiredString(
+      token.mint,
+      "token.mint",
+    ),
+
+    symbol: requiredString(
+      token.symbol,
+      "token.symbol",
+    ),
+
+    decimals: requiredNumber(
+      token.decimals,
+      "token.decimals",
+    ),
+
+    treasuryAddress: requiredString(
+      d.treasuryAddress,
+      "treasuryAddress",
+    ),
+
+    entryMonet: positiveNumber(
+      entry.monet,
+      "entry.monet",
+    ),
+
+    entryUsd: positiveNumber(
+      entry.usd,
+      "entry.usd",
+    ),
+
+    entrySol: positiveNumber(
+      entry.sol,
+      "entry.sol",
+    ),
+
+    winnerPercent: percent(
+      payout.winnerPercent,
+      "payout.winnerPercent",
+    ),
+
+    treasuryPercent: percent(
+      payout.treasuryPercent,
+      "payout.treasuryPercent",
+    ),
+
+    challengeWagers,
+
+    tournamentFieldSizes,
+    tournamentPayout: parsedTournamentPayout,
+
+    paypalUsd,
+
+    network: requiredString(
+      d.network,
+      "network",
+    ),
+
+    publicRpcUrl: requiredString(
+      d.publicRpcUrl,
+      "publicRpcUrl",
+    ),
+  };
+
+  const tournamentPayoutTotal =
+    config.tournamentPayout.firstPercent +
+    config.tournamentPayout.secondPercent +
+    config.tournamentPayout.thirdPercent +
+    config.tournamentPayout.treasuryPercent;
+
+  if (
+    Math.abs(tournamentPayoutTotal - 1) >
+    0.000001
+  ) {
+    throw new Error(
+      "Backend tournament payout percentages do not total 100%",
+    );
+  }
+
+  const payoutTotal =
+    config.winnerPercent +
+    config.treasuryPercent;
+
+  if (
+    Math.abs(payoutTotal - 1) >
+    0.000001
+  ) {
+    throw new Error(
+      "Backend payout percentages do not total 100%",
+    );
+  }
+
+  return config;
+}
+
+export async function loadMonetConfig():
+  Promise<MonetConfig> {
   if (cached) return cached;
   if (inflight) return inflight;
+
   inflight = (async () => {
     try {
-      const res = await fetch(`${apiOrigin()}/api/config`, { cache: "no-store" });
-      if (!res.ok) throw new Error("config");
-      const d = (await res.json()) as Record<string, unknown>;
-      cached = fromPayload(d);
-      return cached;
-    } catch {
-      cached = FALLBACK_CONFIG;
+      const res = await fetch(
+        `${apiOrigin()}/api/config`,
+        {
+          cache: "no-store",
+        },
+      );
+
+      if (!res.ok) {
+        throw new Error(
+          `Backend config request failed (${res.status})`,
+        );
+      }
+
+      const data =
+        (await res.json()) as Record<
+          string,
+          unknown
+        >;
+
+      cached = fromPayload(data);
+
       return cached;
     } finally {
       inflight = null;
     }
   })();
+
   return inflight;
 }
 
-export function jupiterSwapUrl(mint: string) {
+export function jupiterSwapUrl(
+  mint: string,
+) {
   return `https://jup.ag/swap/SOL-${mint}`;
 }
 
-export function raydiumSwapUrl(mint: string) {
+export function raydiumSwapUrl(
+  mint: string,
+) {
   return `https://raydium.io/swap/?inputMint=sol&outputMint=${mint}`;
 }
 
-export function solscanTokenUrl(mint: string) {
+export function solscanTokenUrl(
+  mint: string,
+) {
   return `https://solscan.io/token/${mint}`;
 }

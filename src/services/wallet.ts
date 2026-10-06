@@ -8,8 +8,8 @@ type WalletState = {
   tag: string;
   monet: number;
   sol: number;
-  network: "solana-mainnet" | "sandbox";
-  source: "guest" | "phantom" | "disconnected";
+  network: "solana-mainnet";
+  source: "phantom" | "disconnected";
   connectGuest: () => void;
   connectPhantom: () => Promise<boolean>;
   disconnect: () => void;
@@ -20,86 +20,106 @@ type WalletState = {
   refresh: () => void;
 };
 
-function guestAddress() {
-  const bytes = Array.from({ length: 32 }, () => Math.floor(Math.random() * 16).toString(16)).join("");
-  return `So1${bytes.slice(0, 41)}`;
-}
-
 export const useWallet = create<WalletState>()(
   persist(
     (set, get) => ({
       connected: false,
       address: null,
-      tag: "GUEST",
+      tag: "DISCONNECTED",
       monet: 0,
       sol: 0,
-      network: "sandbox",
+      network: "solana-mainnet",
       source: "disconnected",
+
       connectGuest() {
-        const address = get().address ?? guestAddress();
-        set({
-          connected: true,
-          address,
-          tag: shortTag(address),
-          monet: get().monet > 0 ? get().monet : 12.5,
-          sol: get().sol > 0 ? get().sol : 0.25,
-          network: "sandbox",
-          source: "guest",
-        });
+        console.warn("[wallet] Guest sandbox wallets are disabled in production.");
       },
+
       async connectPhantom() {
         const provider = (
           window as Window & {
-            solana?: { isPhantom?: boolean; connect: () => Promise<{ publicKey: { toString: () => string } }> };
+            solana?: {
+              isPhantom?: boolean;
+              connect: () => Promise<{
+                publicKey: { toString: () => string };
+              }>;
+            };
           }
         ).solana;
+
         if (!provider?.isPhantom) {
-          get().connectGuest();
+          console.warn("[wallet] Phantom provider not found.");
           return false;
         }
+
         try {
           const res = await provider.connect();
           const address = res.publicKey.toString();
+
           set({
             connected: true,
             address,
             tag: shortTag(address),
-            monet: get().monet > 0 ? get().monet : 12.5,
-            sol: get().sol > 0 ? get().sol : 0.25,
-            network: "sandbox",
+            monet: 0,
+            sol: 0,
+            network: "solana-mainnet",
             source: "phantom",
           });
+
           return true;
-        } catch {
+        } catch (error) {
+          console.error("[wallet] Phantom connection failed:", error);
           return false;
         }
       },
+
       disconnect() {
         set({
           connected: false,
+          address: null,
+          tag: "DISCONNECTED",
+          monet: 0,
+          sol: 0,
           source: "disconnected",
         });
       },
+
       creditMonet(n) {
         set({ monet: Math.max(0, get().monet + n) });
       },
+
       debitMonet(n) {
         if (get().monet < n) return false;
         set({ monet: get().monet - n });
         return true;
       },
+
       creditSol(n) {
         set({ sol: Math.max(0, get().sol + n) });
       },
+
       debitSol(n) {
         if (get().sol < n) return false;
         set({ sol: get().sol - n });
         return true;
       },
+
       refresh() {
-        set({ monet: get().monet, sol: get().sol });
+        set({
+          monet: get().monet,
+          sol: get().sol,
+        });
       },
     }),
-    { name: "monet-arcade-wallet" },
+    {
+      name: "monet-arcade-wallet",
+      partialize: (state) => ({
+        connected: state.connected,
+        address: state.address,
+        tag: state.tag,
+        network: state.network,
+        source: state.source,
+      }),
+    },
   ),
 );

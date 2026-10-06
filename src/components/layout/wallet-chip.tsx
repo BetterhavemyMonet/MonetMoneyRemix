@@ -5,10 +5,10 @@ import { useWallet } from "@/services/wallet";
 import { formatMonet } from "@/lib/utils";
 
 export function WalletChip() {
-  const { connected, tag, monet, connectGuest } = useWallet();
+  const { connected, tag, monet, connectPhantom } = useWallet();
   if (!connected) {
     return (
-      <Button size="sm" onClick={() => connectGuest()}>
+      <Button size="sm" onClick={() => connectPhantom()}>
         <Wallet />
         Connect wallet
       </Button>

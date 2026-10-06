@@ -1,10 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { ArcadeShell } from "@/components/layout/arcade-shell";
 import { GameCard } from "@/components/arcade/game-card";
 import { Input } from "@/components/ui/input";
 import { categoriesFromRegistry, gamesForFilter, searchGames } from "@/games/registry";
-import { FALLBACK_CONFIG } from "@/services/monet-config";
+import { loadMonetConfig } from "@/services/monet-config";
 import { formatMonet, formatUsd, cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/games/")({ component: GamesPage });
@@ -12,7 +13,18 @@ export const Route = createFileRoute("/games/")({ component: GamesPage });
 function GamesPage() {
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState("ALL");
-  const filters = ["ALL", ...categoriesFromRegistry().map((c) => c.toUpperCase())];
+
+  const config = useQuery({
+    queryKey: ["monet-config"],
+    queryFn: loadMonetConfig,
+  });
+
+  const filters = [
+    "ALL",
+    ...categoriesFromRegistry().map(
+      (c) => c.toUpperCase(),
+    ),
+  ];
   const games = useMemo(() => {
     const searched = searchGames(q);
     const ids = new Set(gamesForFilter(filter).map((g) => g.id));
@@ -29,15 +41,33 @@ function GamesPage() {
       <div className="mt-5 grid gap-3 sm:grid-cols-3">
         <div className="rounded-xl border border-border bg-surface p-4">
           <p className="text-[10px] uppercase tracking-[0.18em] text-subtle">Entry fee</p>
-          <p className="font-display text-2xl tracking-wide">{formatMonet(FALLBACK_CONFIG.entryMonet)} MONET</p>
+          <p className="font-display text-2xl tracking-wide">{config.data
+              ? `${formatMonet(config.data.entryMonet)} ${config.data.symbol}`
+              : config.isError
+                ? "Unavailable"
+                : "Loading…"}</p>
         </div>
         <div className="rounded-xl border border-border bg-surface p-4">
           <p className="text-[10px] uppercase tracking-[0.18em] text-subtle">USD equivalent</p>
-          <p className="font-display text-2xl tracking-wide">{formatUsd(FALLBACK_CONFIG.entryUsd)}</p>
+          <p className="font-display text-2xl tracking-wide">{config.data
+              ? formatUsd(config.data.entryUsd)
+              : config.isError
+                ? "Unavailable"
+                : "Loading…"}</p>
         </div>
         <div className="rounded-xl border border-border bg-surface p-4">
           <p className="text-[10px] uppercase tracking-[0.18em] text-subtle">Play for the pot</p>
-          <p className="font-display text-2xl tracking-wide">80% / 20%</p>
+          <p className="font-display text-2xl tracking-wide">
+              {config.data
+                ? `${Math.round(
+                    config.data.winnerPercent * 100,
+                  )}% / ${Math.round(
+                    config.data.treasuryPercent * 100,
+                  )}%`
+                : config.isError
+                  ? "Unavailable"
+                  : "Loading…"}
+            </p>
         </div>
       </div>
       <p className="mt-3 text-xs text-subtle">

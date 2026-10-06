@@ -1,12 +1,21 @@
 import { useNavigate } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { Swords, Trophy, Gamepad2, Users } from "lucide-react";
 import type { GameManifest } from "@/games/types";
-import { FALLBACK_CONFIG } from "@/services/monet-config";
+import { loadMonetConfig } from "@/services/monet-config";
 import { formatMonet, formatUsd } from "@/lib/utils";
 
 export function PlayModes({ game, onClose }: { game: GameManifest; onClose: () => void }) {
   const nav = useNavigate();
-  const fee = `${formatMonet(FALLBACK_CONFIG.entryMonet)} ${FALLBACK_CONFIG.symbol}`;
+
+  const config = useQuery({
+    queryKey: ["monet-config"],
+    queryFn: loadMonetConfig,
+  });
+
+  const fee = config.data
+    ? `${formatMonet(config.data.entryMonet)} ${config.data.symbol}`
+    : "LIVE RATE";
   return (
     <div
       className="fixed inset-0 z-50 grid place-items-center bg-bg/80 p-4 backdrop-blur-sm"
@@ -74,8 +83,17 @@ export function PlayModes({ game, onClose }: { game: GameManifest; onClose: () =
           />
         </div>
         <p className="mt-4 text-[11px] text-subtle">
-          Paid modes bill {fee} (≈{formatUsd(FALLBACK_CONFIG.entryUsd)}) through the existing Solana
-          rails. 80% winner / 20% treasury.
+          {config.data
+            ? `Paid modes use the live backend rate: ${fee} (≈${formatUsd(
+                config.data.entryUsd,
+              )}). ${Math.round(
+                config.data.winnerPercent * 100,
+              )}% winner / ${Math.round(
+                config.data.treasuryPercent * 100,
+              )}% treasury.`
+            : config.isError
+              ? "Live payment configuration is currently unavailable."
+              : "Loading live payment configuration…"}
         </p>
       </div>
     </div>

@@ -39,23 +39,40 @@ function GamePage() {
       if (event.type === "SCORE_CHANGED") setScore(event.score);
       if (event.type === "GAME_COMPLETED") {
         setScore(event.score);
-        const tag = wallet.connected ? wallet.tag : "GUEST";
+        if (search.challenge || search.tournament) {
+          toast.info(
+            "Competitive result received. Settlement remains locked until server verification accepts the result.",
+          );
+          return;
+        }
+        if (practice) {
+          toast.success("Practice complete - no competitive score submitted.");
+          return;
+        }
+        if (!wallet.connected || !wallet.address) {
+          toast.error("Connect Phantom to post a leaderboard score.");
+          return;
+        }
         void submitScore({
           data: {
+            wallet: wallet.address,
             gameId: game?.backendGameId ?? slug,
-            playerTag: tag,
+            playerTag: wallet.tag,
             score: Math.floor(event.score),
             durationMs: Math.floor(event.duration * 1000),
             won: event.won,
           },
         }).then(
-          () => toast.success(practice ? "Practice score saved locally" : "Score posted to the arcade board"),
-          () => toast.error("Score stayed local — board is unreachable"),
+          () => toast.success("Score posted to the arcade leaderboard"),
+          () => toast.error("Leaderboard backend is unavailable"),
         );
       }
       if (event.type === "GAME_ERROR") toast.error(event.message);
     });
-  }, [slug, game?.backendGameId, wallet.connected, wallet.tag, practice]);
+  }, [
+    slug, game?.backendGameId, wallet.connected, wallet.address,
+    wallet.tag, practice, search.challenge, search.tournament,
+  ]);
 
   if (!game) {
     return (
