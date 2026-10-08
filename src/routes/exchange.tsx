@@ -23,6 +23,8 @@ function ExchangePage() {
   const config = useQuery({
     queryKey: ["monet-config"],
     queryFn: loadMonetConfig,
+    staleTime: 60_000,
+    refetchInterval: 60_000,
   });
 
   const [from, setFrom] =
@@ -59,6 +61,8 @@ function ExchangePage() {
 
   const out = useMemo(() => {
     if (!config.data || n <= 0) return null;
+    if (config.data.entrySol == null ||
+        config.data.entrySol <= 0) return null;
 
     const rate =
       config.data.entryMonet /

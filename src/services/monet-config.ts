@@ -28,7 +28,7 @@ export type MonetConfig = {
   treasuryAddress: string;
   entryMonet: number;
   entryUsd: number;
-  entrySol: number;
+  entrySol: number | null;
   winnerPercent: number;
   treasuryPercent: number;
   challengeWagers: ChallengeWager[];
@@ -51,6 +51,8 @@ export function apiOrigin() {
 }
 
 let cached: MonetConfig | null = null;
+let cachedAt = 0;
+const CONFIG_CACHE_MS = 60_000;
 let inflight: Promise<MonetConfig> | null = null;
 
 function requiredString(
@@ -245,10 +247,10 @@ function fromPayload(
       "entry.usd",
     ),
 
-    entrySol: positiveNumber(
-      entry.sol,
-      "entry.sol",
-    ),
+    entrySol:
+      entry.sol == null
+        ? null
+        : positiveNumber(entry.sol, "entry.sol"),
 
     winnerPercent: percent(
       payout.winnerPercent,
@@ -311,7 +313,10 @@ function fromPayload(
 
 export async function loadMonetConfig():
   Promise<MonetConfig> {
-  if (cached) return cached;
+  if (
+    cached &&
+    Date.now() - cachedAt < CONFIG_CACHE_MS
+  ) return cached;
   if (inflight) return inflight;
 
   inflight = (async () => {
@@ -336,6 +341,7 @@ export async function loadMonetConfig():
         >;
 
       cached = fromPayload(data);
+      cachedAt = Date.now();
 
       return cached;
     } finally {
