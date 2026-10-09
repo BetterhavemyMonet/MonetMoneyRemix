@@ -1,8 +1,29 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
-  <rect width="48" height="48" rx="14" fill="#08020f"/>
-  <rect x="1.25" y="1.25" width="45.5" height="45.5" rx="12.75" stroke="#a855ff" stroke-opacity="0.7"/>
-  <circle cx="24" cy="24" r="16" fill="#ff4488"/>
-  <circle cx="24" cy="24" r="13.25" fill="#14020a"/>
-  <path fill="#ff4488" d="M14 34V14h6.1l3.9 10.2L27.9 14H34v20h-4.4V21.6L26.2 34h-4.4l-3.4-12.4V34H14z"/>
-  <circle cx="37" cy="12" r="3.4" fill="#00f0ff"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="Monet Money logo">
+  <defs>
+    <linearGradient id="mmGrad" x1="24" y1="24" x2="232" y2="232" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#7cf6ff"/>
+      <stop offset="20%" stop-color="#7fe0ff"/>
+      <stop offset="42%" stop-color="#8a86ff"/>
+      <stop offset="68%" stop-color="#d45bff"/>
+      <stop offset="100%" stop-color="#ff5a9d"/>
+    </linearGradient>
+    <linearGradient id="mmGrad2" x1="40" y1="48" x2="220" y2="220" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#d7ffff" stop-opacity="0.92"/>
+      <stop offset="50%" stop-color="#a9d7ff" stop-opacity="0.65"/>
+      <stop offset="100%" stop-color="#ffb5de" stop-opacity="0.5"/>
+    </linearGradient>
+    <filter id="mmGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="0" stdDeviation="12" flood-color="#ff4dbb" flood-opacity="0.7"/>
+      <feDropShadow dx="0" dy="0" stdDeviation="18" flood-color="#6aeaff" flood-opacity="0.4"/>
+    </filter>
+  </defs>
+
+  <rect width="256" height="256" rx="42" fill="#09050f"/>
+
+  <g filter="url(#mmGlow)">
+    <path d="M32 188V72h30l34 56 34-56h30v116h-26V112L96 176H84L54 112v76H32Z" fill="url(#mmGrad)"/>
+    <path d="M120 188V72h30l34 56 34-56h30v116h-26V112L194 176h-12L152 112v76h-32Z" fill="url(#mmGrad)" opacity="0.96"/>
+    <path d="M58 182V78h20l24 42 24-42h20v104h-18V110L96 152H80L62 110v72H58Z" fill="url(#mmGrad2)" opacity="0.95"/>
+    <path d="M146 182V78h20l24 42 24-42h20v104h-18V110L184 152h-16L150 110v72h-4Z" fill="url(#mmGrad2)" opacity="0.85"/>
+  </g>
 </svg>
