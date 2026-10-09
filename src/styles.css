@@ -7,20 +7,20 @@
 
   --color-bg: #050308;
   --color-bg-elev: #0c0614;
-  --color-surface: #140a1c;
-  --color-surface-2: #1c1028;
+  --color-surface: #0f0817;
+  --color-surface-2: #151028;
   --color-fg: #fff5fb;
-  --color-muted: #b39bb0;
-  --color-subtle: #7a6278;
-  --color-border: #3a2044;
-  --color-border-strong: #62305c;
-  --color-primary: #ff4488;
+  --color-muted: #8b7d94;
+  --color-subtle: #6b5f77;
+  --color-border: #2a1f35;
+  --color-border-strong: #4a3555;
+  --color-primary: #a8689e;
   --color-primary-fg: #ffffff;
-  --color-accent: #a855ff;
-  --color-ice: #00f0ff;
-  --color-warn: #ffd85a;
-  --color-danger: #ff664d;
-  --color-ok: #00ffa3;
+  --color-accent: #7c5ba3;
+  --color-ice: #00e5ff;
+  --color-warn: #ffc85a;
+  --color-danger: #ff6b4d;
+  --color-ok: #00d98e;
 
   --radius-xs: 4px;
   --radius-sm: 8px;
@@ -48,9 +48,9 @@
   body {
     font-family: var(--font-sans);
     background:
-      radial-gradient(ellipse 80% 60% at 50% 8%, color-mix(in oklab, var(--color-accent) 16%, transparent), transparent 70%),
-      radial-gradient(ellipse 50% 40% at 12% 88%, color-mix(in oklab, var(--color-primary) 12%, transparent), transparent 60%),
-      radial-gradient(ellipse 50% 50% at 90% 18%, color-mix(in oklab, var(--color-ice) 8%, transparent), transparent 60%),
+      radial-gradient(ellipse 80% 60% at 50% 8%, color-mix(in oklab, var(--color-accent) 12%, transparent), transparent 70%),
+      radial-gradient(ellipse 50% 40% at 12% 88%, color-mix(in oklab, var(--color-primary) 10%, transparent), transparent 60%),
+      radial-gradient(ellipse 50% 50% at 90% 18%, color-mix(in oklab, var(--color-ice) 6%, transparent), transparent 60%),
       var(--color-bg);
   }
 
@@ -88,8 +88,8 @@
 
 .arcade-grid {
   background-image:
-    linear-gradient(color-mix(in oklab, var(--color-primary) 9%, transparent) 1px, transparent 1px),
-    linear-gradient(90deg, color-mix(in oklab, var(--color-primary) 9%, transparent) 1px, transparent 1px);
+    linear-gradient(color-mix(in oklab, var(--color-primary) 7%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in oklab, var(--color-primary) 7%, transparent) 1px, transparent 1px);
   background-size: 56px 56px;
   mask-image: radial-gradient(ellipse at center, black 30%, transparent 78%);
 }
@@ -99,6 +99,35 @@
   border: 1px solid color-mix(in oklab, var(--color-fg) 10%, transparent);
   box-shadow: 0 18px 50px color-mix(in oklab, black 42%, transparent);
   backdrop-filter: blur(16px);
+}
+
+.game-card-media {
+  position: relative;
+  overflow: hidden;
+  background: radial-gradient(circle at top, rgba(124, 91, 163, 0.35), rgba(15, 8, 23, 0.9) 60%);
+}
+
+.game-card-media::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(8, 6, 12, 0.12), rgba(8, 6, 12, 0.55));
+  pointer-events: none;
+}
+
+.game-card-media img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: saturate(0.72) contrast(1.05) brightness(0.82) hue-rotate(-18deg);
+  transform: scale(1.01);
+  transition: transform 0.5s ease, filter 0.5s ease;
+}
+
+.group:hover .game-card-media img {
+  transform: scale(1.04);
+  filter: saturate(0.82) contrast(1.08) brightness(0.9) hue-rotate(-12deg);
 }
 
 .tabular {
