@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Monet Money — Dino Realms</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #05050c; color: #fff; font-family: 'Orbitron', system-ui, sans-serif; display: flex; flex-direction: column; align-items: center; min-height: 100vh; overflow: hidden; }
+  .ui { text-align: center; padding: 8px 12px; width: 100%; max-width: 900px; }
+  h1 { margin: 6px 0; font-size: 22px; background: linear-gradient(90deg, #00ff9d, #a855ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .controls { font-size: 11px; color: #888; margin: 4px 0 8px; }
+  button { background: #00ff9d; color: #000; border: none; padding: 10px 22px; font-family: inherit; font-weight: 800; border-radius: 8px; cursor: pointer; margin: 4px; }
+  button:hover { filter: brightness(1.15); }
+  #status { font-size: 14px; color: #ffd700; margin-top: 4px; }
+  canvas { border: 2px solid #00ff9d; background: #0a0a14; image-rendering: pixelated; max-width: 100%; touch-action: none; }
+  .touch { display: none; position: fixed; bottom: 20px; width: 100%; justify-content: space-between; padding: 0 20px; z-index: 10; }
+  @media (pointer: coarse) { .touch { display: flex; } }
+  .pad { width: 70px; height: 70px; background: rgba(0,255,157,0.2); border: 2px solid #00ff9d; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 28px; user-select: none; }
+</style>
+</head>
+<body>
+<div class="ui">
+  <h1>PORTALS OF ELON</h1>
+  <div class="controls">A/D or Arrows = Move &nbsp;|&nbsp; Space / Up = Jump &nbsp;|&nbsp; J = Fire &nbsp;|&nbsp; Stomp gorillas & grab relics</div>
+  <button id="startBtn" onclick="startGame()">Start Run</button>
+  <div id="status">Best: 0 &nbsp;|&nbsp; Relics: 0</div>
+</div>
+<canvas id="game" width="800" height="450"></canvas>
+<div class="touch">
+  <div class="pad" id="left">◀</div>
+  <div class="pad" id="jump">▲</div>
+  <div class="pad" id="right">▶</div>
+  <div class="pad" id="fire">🔥</div>
+</div>
+<script>
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+const W = 800, H = 450;
+let running = false, score = 0, relics = 0, best = +localStorage.getItem('dinoBest') || 0;
+let realm = 0;
+const realms = ['Jungle', 'Crystal Night', 'Ice Aurora', 'Lava Rift', 'Neon Castle'];
+document.getElementById('status').textContent = `Best: ${best} | Relics: 0 | Realm: ${realms[0]}`;
+
+const keys = {};
+window.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
+window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
+
+// Touch
+const touch = {left:false, right:false, jump:false, fire:false};
+document.getElementById('left').addEventListener('touchstart', e => { e.preventDefault(); touch.left=true; });
+document.getElementById('left').addEventListener('touchend', () => touch.left=false);
+document.getElementById('right').addEventListener('touchstart', e => { e.preventDefault(); touch.right=true; });
+document.getElementById('right').addEventListener('touchend', () => touch.right=false);
+document.getElementById('jump').addEventListener('touchstart', e => { e.preventDefault(); touch.jump=true; });
+document.getElementById('jump').addEventListener('touchend', () => touch.jump=false);
+document.getElementById('fire').addEventListener('touchstart', e => { e.preventDefault(); touch.fire=true; });
+document.getElementById('fire').addEventListener('touchend', () => touch.fire=false);
+
+const player = { x: 80, y: 300, w: 28, h: 36, vx: 0, vy: 0, onGround: false, facing: 1, fireCooldown: 0 };
+const gravity = 0.6, jumpPower = -12, speed = 4.5;
+let platforms = [], enemies = [], projectiles = [], items = [], portal = null;
+
+function generateLevel() {
+  platforms = [{x:0, y:400, w:800, h:50}];
+  enemies = [];
+  items = [];
+  projectiles = [];
+  for (let i = 0; i < 6; i++) {
+    platforms.push({ x: 120 + i * 110, y: 320 - (i%3)*40, w: 80, h: 12 });
+  }
+  for (let i = 0; i < 4; i++) {
+    enemies.push({ x: 200 + i * 140, y: 360, w: 32, h: 40, vx: (Math.random()>0.5?1:-1)*1.2, alive: true });
+  }
+  for (let i = 0; i < 3; i++) {
+    items.push({ x: 250 + i * 150, y: 280, w: 16, h: 16, taken: false });
+  }
+  portal = { x: 720, y: 340, w: 40, h: 60, active: false };
+}
+
+function startGame() {
+  running = true;
+  score = 0;
+  relics = 0;
+  realm = 0;
+  player.x = 80; player.y = 300; player.vx = 0; player.vy = 0;
+  generateLevel();
+  document.getElementById('startBtn').style.display = 'none';
+  loop();
+}
+
+function update() {
+  // Movement
+  player.vx = 0;
+  if (keys['a'] || keys['arrowleft'] || touch.left) player.vx = -speed;
+  if (keys['d'] || keys['arrowright'] || touch.right) player.vx = speed;
+  if ((keys[' '] || keys['arrowup'] || keys['w'] || touch.jump) && player.onGround) {
+    player.vy = jumpPower;
+    player.onGround = false;
+  }
+  player.vy += gravity;
+  player.x += player.vx;
+  player.y += player.vy;
+  player.onGround = false;
+  if (player.x < 0) player.x = 0;
+  if (player.x > W - player.w) player.x = W - player.w;
+
+  // Platforms
+  platforms.forEach(p => {
+    if (player.x + player.w > p.x && player.x < p.x + p.w &&
+        player.y + player.h > p.y && player.y + player.h < p.y + 20 && player.vy >= 0) {
+      player.y = p.y - player.h;
+      player.vy = 0;
+      player.onGround = true;
+    }
+  });
+
+  // Fire
+  player.fireCooldown--;
+  if ((keys['j'] || touch.fire) && player.fireCooldown <= 0) {
+    projectiles.push({ x: player.x + (player.facing > 0 ? player.w : 0), y: player.y + 12, vx: player.facing * 8, w: 10, h: 6 });
+    player.fireCooldown = 12;
+  }
+  projectiles.forEach(pr => pr.x += pr.vx);
+  projectiles = projectiles.filter(pr => pr.x > -20 && pr.x < W + 20);
+
+  // Enemies
+  enemies.forEach(e => {
+    if (!e.alive) return;
+    e.x += e.vx;
+    if (e.x < 50 || e.x > 700) e.vx *= -1;
+    // Stomp
+    if (player.vy > 0 && player.y + player.h < e.y + 15 && player.x + player.w > e.x && player.x < e.x + e.w) {
+      e.alive = false;
+      player.vy = -6;
+      score += 100;
+    }
+    // Hit by projectile
+    projectiles.forEach(pr => {
+      if (pr.x < e.x + e.w && pr.x + pr.w > e.x && pr.y < e.y + e.h && pr.y + pr.h > e.y) {
+        e.alive = false;
+        score += 80;
+      }
+    });
+  });
+
+  // Relics
+  items.forEach(it => {
+    if (!it.taken && player.x < it.x + it.w && player.x + player.w > it.x && player.y < it.y + it.h && player.y + player.h > it.y) {
+      it.taken = true;
+      relics++;
+      score += 50;
+    }
+  });
+
+  // Portal
+  if (relics >= 2 && !portal.active) portal.active = true;
+  if (portal.active && player.x < portal.x + portal.w && player.x + player.w > portal.x && player.y < portal.y + portal.h && player.y + player.h > portal.y) {
+    realm = (realm + 1) % realms.length;
+    score += 500;
+    generateLevel();
+    player.x = 80; player.y = 300;
+  }
+
+  if (player.y > H) {
+    // Fall = reset
+    player.x = 80; player.y = 300; player.vy = 0;
+  }
+
+  document.getElementById('status').textContent = `Score: ${score} | Relics: ${relics}/3 | Realm: ${realms[realm]} | Best: ${Math.max(best, score)}`;
+  if (score > best) { best = score; localStorage.setItem('dinoBest', best); }
+}
+
+function draw() {
+  ctx.fillStyle = realm % 2 === 0 ? '#0a1a12' : '#120a1a';
+  ctx.fillRect(0, 0, W, H);
+
+  // Platforms
+  ctx.fillStyle = '#3a5a3a';
+  platforms.forEach(p => ctx.fillRect(p.x, p.y, p.w, p.h));
+
+  // Items (relics)
+  items.forEach(it => {
+    if (!it.taken) {
+      ctx.fillStyle = '#ffd700';
+      ctx.beginPath();
+      ctx.arc(it.x + 8, it.y + 8, 8, 0, Math.PI*2);
+      ctx.fill();
+    }
+  });
+
+  // Enemies (gorillas)
+  enemies.forEach(e => {
+    if (!e.alive) return;
+    ctx.fillStyle = '#555';
+    ctx.fillRect(e.x, e.y, e.w, e.h);
+    ctx.fillStyle = '#333';
+    ctx.fillRect(e.x + 4, e.y + 4, 8, 8);
+    ctx.fillRect(e.x + 20, e.y + 4, 8, 8);
+  });
+
+  // Portal
+  if (portal) {
+    ctx.fillStyle = portal.active ? '#a855ff' : '#333';
+    ctx.fillRect(portal.x, portal.y, portal.w, portal.h);
+    if (portal.active) {
+      ctx.fillStyle = '#fff';
+      ctx.font = '10px Orbitron';
+      ctx.fillText('PORTAL', portal.x - 5, portal.y - 6);
+    }
+  }
+
+  // Projectiles
+  ctx.fillStyle = '#00ff9d';
+  projectiles.forEach(pr => ctx.fillRect(pr.x, pr.y, pr.w, pr.h));
+
+  // Player (cute green dino)
+  ctx.fillStyle = '#00ff66';
+  ctx.fillRect(player.x, player.y, player.w, player.h);
+  ctx.fillStyle = '#aaffcc'; // belly
+  ctx.fillRect(player.x + 6, player.y + 16, 16, 14);
+  // Big head
+  ctx.fillStyle = '#00ee55';
+  ctx.fillRect(player.x - 2, player.y - 6, 32, 18);
+  // Eyes
+  ctx.fillStyle = '#000';
+  ctx.fillRect(player.x + 18, player.y - 2, 4, 4);
+  ctx.fillRect(player.x + 24, player.y - 2, 4, 4);
+}
+
+function loop() {
+  if (!running) return;
+  update();
+  draw();
+  requestAnimationFrame(loop);
+}
+</script>
+</body>
+</html>
