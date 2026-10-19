@@ -20,34 +20,20 @@ function Home() {
 
   return (
     <ArcadeShell>
-      <section className="relative overflow-hidden rounded-xl border border-primary/25 bg-bg-elev px-5 py-12 text-center md:px-10 md:py-16">
-        <p className="text-[11px] font-extrabold uppercase tracking-[0.32em] text-primary">Insert coin to earn</p>
-        <h1 className="hero-glitch mt-4 text-6xl md:text-8xl" data-text="MONET MONEY">
-          MONET MONEY
-        </h1>
-        <p className="mt-3 bg-gradient-to-r from-primary to-accent bg-clip-text font-display text-2xl tracking-[0.16em] text-transparent md:text-4xl">
-          PLAY. EARN. ESCAPE.
+      <section className="relative overflow-hidden rounded-xl border border-primary/25 bg-bg-elev px-5 py-8 text-left md:px-8 md:py-10">
+        <p className="text-[11px] font-extrabold uppercase tracking-[0.32em] text-primary">Insert coin</p>
+        <h1 className="mt-3 font-display text-4xl tracking-wide md:text-6xl">Play the floor</h1>
+        <p className="mt-3 max-w-xl text-sm leading-relaxed text-muted">
+          Production cabinets from betterhavemymonet.com, plus the games on this build. A round is {formatMonet(FALLBACK_CONFIG.entryMonet)} MONET, ${FALLBACK_CONFIG.entryUsd.toFixed(2)}, or the matching SOL amount in the connected wallet. Raise a match to $4.99 or $9.99. Head-to-head pays the winner {Math.round(FALLBACK_CONFIG.winnerPercent * 100)}% and the treasury 20%. Skill only. No chance cabinets.
         </p>
-        <p className="mt-3 text-sm uppercase tracking-[0.18em] text-muted">
-          The arcade where <span className="text-primary">memes</span> print money.
-        </p>
-        <p className="mx-auto mt-4 max-w-lg text-sm text-muted">
-          Better have my Monet. Original skill games on Solana — practice free, challenge a friend,
-          or cash out the pot.
-        </p>
-        <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-          <Button asChild>
-            <Link to="/games">Play games</Link>
-          </Button>
-          <Button asChild variant="secondary">
-            <Link to="/leaderboards">Leaderboard</Link>
-          </Button>
-        </div>
-        <div className="mt-6 inline-flex items-center gap-3 rounded-full border border-primary/25 bg-primary/10 px-4 py-2">
-          <span className="text-[10px] uppercase tracking-[0.2em] text-muted">Monet balance</span>
-          <span className="tabular text-sm font-semibold text-primary">
-            {connected ? formatMonet(monet) : "Connect wallet"}
-          </span>
+        <p className="mt-3 text-xs uppercase tracking-[0.18em] text-muted">Play. Earn. Escape. Better have my Monet.</p>
+        <div className="mt-5 flex flex-wrap items-center gap-3">
+          <Button asChild><Link to="/challenges">Live lobby</Link></Button>
+          <Button asChild variant="secondary"><Link to="/exchange">Exchange</Link></Button>
+          <div className="inline-flex items-center gap-3 rounded-full border border-primary/25 bg-primary/10 px-4 py-2">
+            <span className="text-[10px] uppercase tracking-[0.2em] text-muted">Monet</span>
+            <span className="tabular text-sm font-semibold text-primary">{connected ? formatMonet(monet) : "Connect wallet"}</span>
+          </div>
         </div>
       </section>
 

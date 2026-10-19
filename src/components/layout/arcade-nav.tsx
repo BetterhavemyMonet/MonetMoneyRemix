@@ -3,10 +3,10 @@ import { Gamepad2, House, Swords, Trophy, Wallet } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const links = [
-  { to: "/", label: "Home", icon: House },
-  { to: "/games", label: "Arcade", icon: Gamepad2 },
-  { to: "/challenges", label: "Challenge", icon: Swords },
-  { to: "/leaderboards", label: "Boards", icon: Trophy },
+  { to: "/", label: "Floor", icon: House },
+  { to: "/challenges", label: "Lobby", icon: Swords },
+  { to: "/tournaments", label: "Brackets", icon: Trophy },
+  { to: "/exchange", label: "Exchange", icon: Wallet },
   { to: "/wallet", label: "Wallet", icon: Wallet },
 ] as const;
 

@@ -16,7 +16,7 @@ export function ArcadeShell({ children, flush }: { children: ReactNode; flush?: 
               <span className="block bg-gradient-to-r from-primary to-accent bg-clip-text font-display text-lg tracking-[0.12em] text-transparent">
                 MONET MONEY
               </span>
-              <span className="block text-[9px] uppercase tracking-[0.28em] text-muted">Arcade · Solana</span>
+              <span className="block text-[9px] uppercase tracking-[0.28em] text-muted">Mainnet arcade</span>
             </span>
           </Link>
           <ArcadeNav />
