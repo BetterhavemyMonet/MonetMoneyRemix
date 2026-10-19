@@ -1,19 +1,11 @@
 import { Link } from "@tanstack/react-router";
-import { Wallet } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { useWallet } from "@/services/wallet";
 import { formatMonet } from "@/lib/utils";
+import { ConnectWalletButton } from "@/components/arcade/connect-wallet";
 
 export function WalletChip() {
-  const { connected, tag, monet, connectPhantom } = useWallet();
-  if (!connected) {
-    return (
-      <Button size="sm" onClick={() => connectPhantom()}>
-        <Wallet />
-        Connect wallet
-      </Button>
-    );
-  }
+  const { connected, tag, monet } = useWallet();
+  if (!connected) return <ConnectWalletButton />;
   return (
     <Link
       to="/wallet"
@@ -21,7 +13,9 @@ export function WalletChip() {
     >
       <span className="hidden font-mono text-[10px] text-muted sm:inline">{tag}</span>
       <span className="tabular font-medium text-primary">{formatMonet(monet)}</span>
-      <span className="text-[9px] uppercase tracking-wide text-muted">MONET</span>
+      <span className="text-[9px] uppercase tracking-wide text-muted">
+        MONET
+      </span>
     </Link>
   );
 }
